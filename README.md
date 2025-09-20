@@ -201,15 +201,4 @@ Contributions to Anchor AI are welcome. To contribute, fork the repository and c
 Anchor AI was built using open-source tools from Hugging Face, NLTK, Flask, and other contributors. It was inspired by the growing need for accessible and empathetic mental health support tailored to students.
 For questions or suggestions, please open an issue on the repository or contact the maintainer through their GitHub profile or provided email address.
 
-
-```
-Development Team
-Arpanjot Kaur
-
-Khushi Dhona
-
-Saaanvi Srivastava
-
-Sayak Samanta
-
-Soumyadeep Chakraborty
+ 
