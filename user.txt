@@ -1,0 +1,84 @@
+2025-09-20 18:21:41,0.0,😐 Neutral,Weather search
+2025-09-20 18:21:52,0.0,😐 Neutral,Latest news search
+2025-09-20 18:33:35,0.0,😐 Neutral,hi
+2025-09-20 18:33:53,0.0,😐 Neutral,yesss
+2025-09-20 18:34:03,-0.5256,😞 Negative,i am very sad
+2025-09-20 18:34:24,0.34,😊 Positive,Motivation vedio suggest
+2025-09-20 18:34:38,0.0,😐 Neutral,Book suggest
+2025-09-20 18:34:47,0.0,😐 Neutral,suggest
+2025-09-20 18:35:04,0.0,😐 Neutral,suggest songs
+2025-09-20 18:35:16,0.0,😐 Neutral,what is this
+2025-09-20 18:36:40,0.6115,😊 Positive,i am very happy veryy
+2025-09-20 18:47:25,0.0,😐 Neutral,hi
+2025-09-20 18:47:35,0.0,😐 Neutral,Weather search
+2025-09-20 18:47:58,0.0,😐 Neutral,Study tips
+2025-09-20 18:48:03,0.34,😊 Positive,Motivation video suggest
+2025-09-20 18:49:49,0.0,😐 Neutral,hi
+2025-09-20 18:50:15,-0.8181,😞 Negative,i amvery sad my gf did not like me because my dick is small
+2025-09-20 18:50:30,0.0,😐 Neutral,suggest
+2025-09-20 18:50:40,0.0,😐 Neutral,Latest news search
+2025-09-20 19:22:38,0.0,😐 Neutral,suggest
+2025-09-20 19:23:11,-0.5256,😞 Negative,i am very sad
+2025-09-20 19:23:30,0.4404,😊 Positive,my day is good
+2025-09-20 19:23:48,0.4939,😊 Positive,my friend soumyadeep
+2025-09-20 19:42:41,-0.5256,😞 Negative,i am very sad
+2025-09-20 19:42:57,0.0,😐 Neutral,suggest
+2025-09-20 19:43:37,0.8316,😊 Positive,great now i am happy
+2025-09-20 19:43:58,0.0,😐 Neutral,Study tips
+2025-09-20 19:44:01,0.0,😐 Neutral,Latest news search
+2025-09-20 19:45:21,0.0,😐 Neutral,Latest news search
+2025-09-20 19:45:54,0.0,😐 Neutral,yalgaar vedio serach
+2025-09-20 19:46:04,0.0,😐 Neutral,yalgaar vedi search
+2025-09-20 19:47:01,0.0,😐 Neutral,yalgaar vedio search
+2025-09-20 19:47:50,0.0,😐 Neutral,vedio search
+2025-09-20 19:48:26,0.0,😐 Neutral,yalgaar youtube vedio search
+2025-09-20 19:49:01,0.0,😐 Neutral,home work
+2025-09-20 19:49:06,0.0,😐 Neutral,14:18
+2025-09-20 19:49:16,0.0,😐 Neutral,2025-09-24
+2025-09-20 19:59:57,0.0,😐 Neutral,hi
+2025-09-20 20:00:03,0.0,😐 Neutral,Study tips
+2025-09-20 20:00:12,0.0,😐 Neutral,Exercise routines
+2025-09-20 20:00:49,-0.3818,😞 Negative,how can i manage stress when i feel overwhelmed with studies ?
+2025-09-20 20:01:05,0.0,😐 Neutral,Book suggest
+2025-09-20 20:01:23,0.0,😐 Neutral,suggest
+2025-09-20 20:01:44,0.0,😐 Neutral,homework
+2025-09-20 20:01:50,0.0,😐 Neutral,13:19
+2025-09-20 20:01:57,0.0,😐 Neutral,2015-09-23
+2025-09-20 20:02:03,0.4404,😊 Positive,thanks
+2025-09-20 20:03:01,0.0,😐 Neutral,home work
+2025-09-20 20:03:08,0.0,😐 Neutral,12:19
+2025-09-20 20:03:15,0.0,😐 Neutral,2025-09-23
+2025-09-20 20:03:31,0.0,😐 Neutral,hey
+2025-09-20 20:05:45,0.0,😐 Neutral,Hi!
+2025-09-20 20:06:21,-0.3818,😞 Negative,How can i manage stress when i feel overwhelmed with work?
+2025-09-20 20:06:44,-0.5256,😞 Negative,i feel very  sad
+2025-09-20 20:06:55,0.0,😐 Neutral,suggest
+2025-09-20 20:07:15,0.0,😐 Neutral,Study tips
+2025-09-20 20:07:20,0.0,😐 Neutral,Book suggest
+2025-09-20 20:07:33,0.0,😐 Neutral,work
+2025-09-20 20:07:37,0.0,😐 Neutral,21:19
+2025-09-20 20:07:45,0.0,😐 Neutral,2025-09-24
+2025-09-20 20:07:50,0.4404,😊 Positive,thanks
+2025-09-20 20:08:06,0.4588,😊 Positive,now i feel motivated
+2025-09-20 20:58:07,0.0,😐 Neutral,hi
+2025-09-20 20:58:19,0.4215,😊 Positive,nice
+2025-09-20 20:58:37,0.4019,😊 Positive,yes
+2025-09-20 20:58:59,0.6702,😊 Positive,not that much good but yes well
+2025-09-20 20:59:17,0.0,😐 Neutral,suggest
+2025-09-20 20:59:28,0.0,😐 Neutral,suggest
+2025-09-20 20:59:29,0.0,😐 Neutral,suggest
+2025-09-20 20:59:30,0.0,😐 Neutral,suggest
+2025-09-20 20:59:31,0.4019,😊 Positive,Healthy recipes search
+2025-09-20 21:25:29,0.0,😐 Neutral,therapy start
+2025-09-20 21:25:49,-0.5256,😞 Negative,i am very sad
+2025-09-20 21:26:01,0.0,😐 Neutral,therapy start
+2025-09-20 21:26:32,0.0,😐 Neutral,therapy start
+2025-09-20 21:26:39,0.4215,😊 Positive,nice
+2025-09-20 21:47:13,0.0,😐 Neutral,therapy start
+2025-09-20 21:47:21,-0.296,😞 Negative,no
+2025-09-20 21:47:29,0.2023,😊 Positive,i am fine
+2025-09-20 21:47:46,0.4927,😊 Positive,yess quite good actually
+2025-09-20 21:47:51,0.4215,😊 Positive,nice
+2025-09-20 21:48:01,0.0,😐 Neutral,yees
+2025-09-20 21:48:04,0.4215,😊 Positive,nice
+2025-09-20 21:48:24,0.5859,😊 Positive,to be successful

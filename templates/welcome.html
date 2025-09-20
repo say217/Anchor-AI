@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anchor AI - Your Mental Health Companion</title>
+     <link rel="icon" href="https://img.freepik.com/premium-photo/black-background-with-pink-orange-logo_978914-26588.jpg" type="image/png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #111111;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #999999;
+            --accent-primary: #ffffff;
+            --accent-secondary: #aaaaaa;
+            --gradient-primary: linear-gradient(135deg, #ffffff 0%, #aaaaaa 100%);
+            --border-color: rgba(255, 255, 255, 0.3);
+            --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.2);
+            --spotlight-color: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.8;
+            overflow-x: hidden;
+            font-weight: 300;
+        }
+        .spotlight-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--spotlight-color);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+        }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+       .logo img {
+    height: 50px;         /* slightly bigger */
+    width: 50px;          /* make it square to get a perfect circle */
+    border-radius: 50%;   /* makes it round */
+    border: 3px solid white; /* white border */
+    object-fit: cover;    /* ensures image fits nicely inside the circle */
+}
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover {
+            color: var(--accent-primary);
+        }
+        .nav-links.mobile-open {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-secondary);
+            width: 100%;
+            padding: 1.5rem;
+            z-index: 100;
+        }
+        .btn-17 {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 400;
+            padding: 0.8rem 2.5rem;
+            text-transform: uppercase;
+            border-radius: 50px;
+            border: 1px solid var(--accent-primary);
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, color 0.3s ease;
+        }
+        .btn-17:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+            background: #fff;
+            color: #000;
+        }
+        .btn-17 .text-container {
+            display: block;
+            overflow: hidden;
+            position: relative;
+        }
+        .btn-17 .text {
+            display: block;
+            position: relative;
+        }
+        .btn-17:hover .text {
+            animation: move-up-alternate 0.3s forwards;
+        }
+        @keyframes move-up-alternate {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(80%); }
+            51% { transform: translateY(-80%); }
+            100% { transform: translateY(0); }
+        }
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 0.56rem 2rem;
+            border: 1px solid var(--accent-primary);
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 400;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom:2.6px;
+        }
+        .btn-secondary:hover {
+            background: #fff;
+            color: #000;
+            transform: translateY(-2px);
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding-top: 80px;
+            position: relative;
+        }
+        .hero-content {
+            max-width: 900px;
+            animation: fadeInUp 1.5s ease-out;
+        }
+        .hero h1 {
+            font-size: clamp(4rem, 6vw, 5rem);
+            font-weight: 350;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-weight: 300;
+            margin-top:-20px;
+        }
+        .hero-description {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 300;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .about {
+            padding: 8rem 0;
+            background: var(--bg-secondary);
+        }
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        .about-text h2 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .about-text p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+        .about-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        .card, .stat-item, .feature-card, .help-item {
+            --white: hsl(0, 0%, 100%);
+            --black: hsl(0, 0%, 0%);
+            --paragraph: hsl(0, 0%, 70%);
+            --line: hsl(0, 0%, 20%);
+            --primary: hsl(0, 0%, 90%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 2rem;
+            width: 100%;
+            background-color: var(--bg-card);
+            background-image: radial-gradient(
+                at 88% 40%, var(--bg-secondary) 0px, transparent 85%
+            ),
+            radial-gradient(at 49% 30%, var(--bg-secondary) 0px, transparent 85%),
+            radial-gradient(at 14% 26%, var(--bg-secondary) 0px, transparent 85%),
+            radial-gradient(at 0% 64%, hsl(0, 0%, 20%) 0px, transparent 85%),
+            radial-gradient(at 41% 94%, hsl(0, 0%, 30%) 0px, transparent 85%),
+            radial-gradient(at 100% 99%, hsl(0, 0%, 10%) 0px, transparent 85%);
+            border-radius: 1.5rem;
+            box-shadow: 0px -16px 24px 0px rgba(255, 255, 255, 0.1) inset;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .card:hover, .stat-item:hover, .feature-card:hover, .help-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-glow);
+        }
+        .card .card__border, .stat-item .card__border, .feature-card .card__border, .help-item .card__border {
+            overflow: hidden;
+            pointer-events: none;
+            position: absolute;
+            z-index: -10;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% + 2px);
+            height: calc(100% + 2px);
+            background-image: linear-gradient(
+                0deg, hsl(0, 0%, 100%) -50%, hsl(0, 0%, 40%) 100%
+            );
+            border-radius: 1.5rem;
+        }
+        .card .card__border::before, .stat-item .card__border::before, .feature-card .card__border::before, .help-item .card__border::before {
+            content: "";
+            pointer-events: none;
+            position: fixed;
+            z-index: 200;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transform-origin: left;
+            width: 200%;
+            height: 10rem;
+            background-image: linear-gradient(
+                0deg, hsla(0, 0%, 100%, 0) 0%, hsl(0, 0%, 90%) 40%,
+                hsl(0, 0%, 90%) 60%, hsla(0, 0%, 40%, 0) 100%
+            );
+            animation: rotate 8s linear infinite;
+        }
+        @keyframes rotate {
+            to { transform: rotate(360deg); }
+        }
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 400;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            font-weight: 300;
+            font-size: 1rem;
+        }
+        .features {
+            padding: 8rem 0;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .section-header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            font-weight: 300;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2.5rem;
+        }
+        .feature-card .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-primary);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .feature-card .feature-icon i {
+            font-size: 1.8rem;
+            color: var(--bg-primary);
+        }
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-weight: 300;
+            font-size: 1rem;
+        }
+        .how-it-helps {
+            padding: 8rem 0;
+            background: var(--bg-secondary);
+        }
+        .help-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+        .help-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .help-icon i {
+            color: var(--bg-primary);
+            font-size: 1.5rem;
+        }
+        .help-content h4 {
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+        }
+        .help-content p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+        .cta-section {
+            padding: 8rem 0;
+            text-align: center;
+            background: var(--gradient-primary);
+        }
+        .cta-content {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .cta-content h2 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            color: var(--bg-primary);
+        }
+        .cta-content p {
+            font-size: 1.1rem;
+            color: var(--bg-primary);
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+        .footer {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            padding: 5rem 0 2rem;
+        }
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        .footer-section h3 {
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.4rem;
+        }
+        .footer-section p,
+        .footer-section a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-weight: 300;
+            transition: color 0.3s ease;
+            font-size: 1rem;
+        }
+        .footer-section a:hover {
+            color: var(--accent-primary);
+        }
+        .social-links {
+            display: flex;
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+        .social-link {
+            width: 45px;
+            height: 45px;
+            background: var(--bg-card);
+            
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+       
+        .footer-bottom {
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 300;
+            font-size: 0.9rem;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 1s ease;
+        }
+        .animate-on-scroll.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Diagram Styles */
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 3rem;
+            position: relative;
+        }
+        .diagram {
+            max-width: 800px;
+            width: 100%;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .diagram::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+        }
+        .diagram-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--accent-primary);
+            border-radius: 12px;
+            margin: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .diagram-node:hover {
+            transform: scale(1.05);
+        }
+        .diagram-node h4 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .diagram-node p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+        .diagram-connector {
+            position: absolute;
+            border: 1px dashed var(--accent-secondary);
+            z-index: -1;
+        }
+        .diagram-center {
+            position: relative;
+            padding: 2rem;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: var(--shadow-glow);
+        }
+        .diagram-center h3 {
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: var(--bg-primary);
+        }
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .nav-links.mobile-open {
+                display: flex;
+            }
+            .mobile-menu-toggle {
+                display: block;
+                background: none;
+                border: none;
+                color: var(--text-primary);
+                font-size: 1.8rem;
+                cursor: pointer;
+            }
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .about-content {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .help-items {
+                grid-template-columns: 1fr;
+            }
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .diagram-container {
+                flex-direction: column;
+            }
+            .diagram {
+                padding: 1rem;
+            }
+            .diagram-center {
+                width: 120px;
+                height: 120px;
+            }
+            .diagram-center h3 {
+                font-size: 1rem;
+            }
+        }
+        .dot-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 35vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* New Mini Cards Styles */
+        .mini-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .mini-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .mini-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+        .mini-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            transition: all 0.3s ease;
+        }
+        .mini-card:hover::before {
+            top: -100%;
+            left: -100%;
+        }
+        .mini-card h4 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin-bottom: 0.8rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .mini-card p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+        .mini-card-highlight {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="spotlight-bg"></div>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <img src="https://img.freepik.com/premium-photo/black-background-with-pink-orange-logo_978914-26588.jpg" alt="Anchor AI Logo">
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-helps">How It Helps</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+              <form action="/get_started" method="post" style="display:inline;">
+    <button type="submit" class="btn-17">
+        <span class="text-container">
+            <span class="text">Get Started</span>
+        </span>
+    </button>
+</form>
+
+            </nav>
+        </div>
+    </header>
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Welcome to Anchor AI</h1>
+            <p class="hero-subtitle">Your Supportive Mental Health Companion for Students</p>
+            <p class="hero-description">
+                Anchor AI is an empathetic, student-focused mental health assistant designed to provide emotional support, guidance, and motivation. Acting like a caring friend, it helps students navigate stress, anxiety.
+            </p>
+            <div class="hero-buttons">
+                <!-- Replaced link with form -->
+                <form action="/get_started" method="post" style="display:inline;">
+                    <button type="submit" class="btn-17">
+                        <span class="text-container">
+                            <span class="text">Get Started</span>
+                        </span>
+                        <i class="fas fa-rocket"></i>
+                    </button>
+                </form>
+
+                <a href="#features" class="btn-secondary">
+                    <i class="fas fa-play"></i>
+                    Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <section class="about" id="about">
+        <div class="container">
+            <div class="about-content animate-on-scroll">
+                <div class="about-text">
+                    <h2>What is Anchor AI?</h2>
+                    <p>
+                        Anchor AI is more than just a chatbot – it's your personal mental health companion that understands the unique challenges students face. Using advanced AI technology, it provides empathetic support, personalized recommendations, and practical tools to help you maintain emotional well-being.
+                    </p>
+                    <p>
+                        Whether you're dealing with exam stress, social anxiety, or just need someone to talk to, Anchor AI is here 24/7 to provide non-judgmental support and guidance tailored specifically to your needs.
+                    </p>
+                </div>
+                <div class="about-stats">
+                    <div class="stat-item card">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Available Support</div>
+                    </div>
+                    <div class="stat-item card">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Confidential</div>
+                    </div>
+                    <div class="stat-item card">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Personalized Care</div>
+                    </div>
+                    <div class="stat-item card">
+                        <div class="stat-number">AI</div>
+                        <div class="stat-label">Powered Intelligence</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Comprehensive Mental Health Features</h2>
+                <p>Discover all the ways Anchor AI supports your mental well-being journey</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3>AI Mental Companion</h3>
+                    <p>Engage with an empathetic AI that understands your emotions and provides personalized support through meaningful conversations and guidance.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h3>Virtual Therapy Sessions</h3>
+                    <p>Access structured therapy-inspired sessions that help you work through challenges using proven psychological techniques and coping strategies.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h3>Mood-Based Music & Videos</h3>
+                    <p>Receive personalized music and motivational video recommendations that align with your current emotional state to uplift and inspire you.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Mood Tracking & Analytics</h3>
+                    <p>Monitor your emotional patterns with comprehensive sentiment analysis and detailed reports to better understand your mental health journey.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h3>Smart Scheduling & Reminders</h3>
+                    <p>Stay organized with AI-powered scheduling that reminds you of important tasks, goals, and self-care activities based on your routine.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <h3>Daily Affirmations</h3>
+                    <p>Start each day with personalized positive affirmations and motivational messages tailored to boost your confidence and mindset.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>Smart Topic Research</h3>
+                    <p>Get curated content and resources on mental health topics, study techniques, and personal development to support your growth.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3>Book Recommendations</h3>
+                    <p>Discover books on mental health, self-improvement, and academic success recommended based on your interests and current challenges.</p>
+                </div>
+                <div class="feature-card card animate-on-scroll">
+                    <div class="feature-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3>Motivation & Goal Setting</h3>
+                    <p>Set, track, and achieve your personal and academic goals with AI-powered motivation and progress monitoring.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="how-it-helps" id="how-it-helps">
+        <div class="container">
+            <div class="section-header animate-on-scroll">
+                <h2>Why Students Need Anchor AI</h2>
+                <p>Understanding the unique mental health challenges students face in today's world</p>
+            </div>
+            <div class="mini-cards-grid animate-on-scroll">
+                <div class="mini-card">
+                    <h4>24/7 Accessibility</h4>
+                    <p>Support available anytime, addressing the <span class="mini-card-highlight">unpredictable nature</span> of mental health needs.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>Affordable Support</h4>
+                    <p>Cost-effective mental health guidance, making support <span class="mini-card-highlight">accessible to all students</span>.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>Complete Privacy</h4>
+                    <p>Confidential environment ensures students can <span class="mini-card-highlight">share freely</span> without judgment.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>Student-Focused</h4>
+                    <p>Tailored to address the <span class="mini-card-highlight">unique academic and social pressures</span> students face.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>Personalized Learning</h4>
+                    <p>Adapts to individual patterns, offering <span class="mini-card-highlight">increasingly relevant support</span>.</p>
+                </div>
+                <div class="mini-card">
+                    <h4>Safe Space</h4>
+                    <p>Non-judgmental environment fosters <span class="mini-card-highlight">open exploration</span> of emotions.</p>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 2rem; color: var(--text-secondary); font-size: 1rem;">
+                Anchor AI's architecture is designed to provide a robust, student-centric mental health support system. The central hub represents Anchor AI, connecting to key benefits that address critical student needs, ensuring accessibility, affordability, privacy, and personalized care in a safe, non-judgmental environment.
+            </p>
+        </div>
+    </section>
+    <section class="cta-section" id="get-started">
+        <div class="container">
+            <div class="cta-content animate-on-scroll">
+                <h2>Ready to Start Your Mental Health Journey?</h2>
+                <p>Join thousands of students who have found support, guidance, and renewed motivation with Anchor AI. Your mental health matters, and we're here to help.</p>
+                <a href="#signup" class="btn-17">
+                    <span class="text-container">
+                        <span class="text">Start Free Today</span>
+                    </span>
+                    <i class="fas fa-rocket"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Anchor AI</h3>
+                    <p>Empowering students with AI-driven mental health support and guidance for a better tomorrow.</p>
+                    <div class="social-links">
+                    
+                        <a href="https://github.com/say217/Anchor-AI" class="social-link"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>Features</h3>
+                    <a href="#">AI Companion</a>
+                    <a href="#">Mood Tracking</a>
+                    <a href="#">Therapy Sessions</a>
+                    <a href="#">Music Recommendations</a>
+                    <a href="#">Goal Setting</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <a href="#">Mental Health Guide</a>
+                    <a href="#">Student Support</a>
+                    <a href="#">Crisis Resources</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Development Team</h3>
+                    <p><strong>Arpanjot Kaur</p>
+                    <p><strong>Khushi Dhona</strong></p>
+                    <p><strong>Saaanvi Srivastava</strong> </p>
+                    <p><strong>Sayak Samanta</strong></p>
+                      <p><strong>Soumyadeep Chakraborty  </strong></p>
+                    
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Anchor AI. All rights reserved. | Built with ❤️ for student mental health</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        const mobileToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        if (mobileToggle && navLinks) {
+            mobileToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('mobile-open');
+            });
+        }
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stat-number');
+            counters.forEach(counter => {
+                const target = counter.innerText;
+                const isNumber = !isNaN(target);
+                if (isNumber) {
+                    const increment = parseInt(target) / 100;
+                    let current = 0;
+                    const timer = setInterval(() => {
+                        current += increment;
+                        counter.innerText = Math.floor(current);
+                        if (current >= parseInt(target)) {
+                            counter.innerText = target;
+                            clearInterval(timer);
+                        }
+                    }, 20);
+                }
+            });
+        }
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        const statsSection = document.querySelector('.about-stats');
+        if (statsSection) {
+            statsObserver.observe(statsSection);
+        }
+        function createFloatingParticles() {
+            const particleContainer = document.createElement('div');
+            particleContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0;
+            `;
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 3px;
+                    height: 3px;
+                    background: rgba(255, 255, 255, 0.3);
+                    border-radius: 50%;
+                    animation: float ${Math.random() * 12 + 8}s infinite ease-in-out;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    animation-delay: ${Math.random() * 10}s;
+                `;
+                particleContainer.appendChild(particle);
+            }
+            document.body.appendChild(particleContainer);
+        }
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.5; }
+                50% { transform: translateY(-30px) rotate(180deg); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+        createFloatingParticles();
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(0, 0, 0, 0.98)';
+            } else {
+                header.style.background = 'rgba(0, 0, 0, 0.95)';
+            }
+        });
+        window.addEventListener('load', () => {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.8s ease-in-out';
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+        document.querySelectorAll('.feature-card, .stat-item, .diagram-node').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+        const heroTitle = document.querySelector('.hero h1');
+        if (heroTitle) {
+            heroTitle.setAttribute('data-text', heroTitle.innerText);
+            heroTitle.addEventListener('mouseenter', () => {
+                heroTitle.classList.add('glitch');
+            });
+            heroTitle.addEventListener('mouseleave', () => {
+                heroTitle.classList.remove('glitch');
+            });
+        }
+        const glitchStyle = document.createElement('style');
+        glitchStyle.textContent = `
+            .glitch {
+                position: relative;
+                animation: glitch-anim 2s infinite linear alternate-reverse;
+            }
+            .glitch::before,
+            .glitch::after {
+                content: attr(data-text);
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .glitch::before {
+                left: 2px;
+                text-shadow: -2px 0 #999;
+                clip: rect(24px, 550px, 90px, 0);
+                animation: glitch-anim-2 3s infinite linear alternate-reverse;
+            }
+            .glitch::after {
+                left: -2px;
+                text-shadow: -2px 0 #ccc;
+                clip: rect(85px, 550px, 140px, 0);
+                animation: glitch-anim-3 2.5s infinite linear alternate-reverse;
+            }
+            @keyframes glitch-anim {
+                0% { clip: rect(42px, 9999px, 44px, 0); }
+                5% { clip: rect(12px, 9999px, 59px, 0); }
+                10% { clip: rect(48px, 9999px, 29px, 0); }
+                15% { clip: rect(42px, 9999px, 73px, 0); }
+                20% { clip: rect(63px, 9999px, 27px, 0); }
+                25% { clip: rect(34px, 9999px, 55px, 0); }
+                30% { clip: rect(86px, 9999px, 73px, 0); }
+                35% { clip: rect(20px, 9999px, 20px, 0); }
+                40% { clip: rect(26px, 9999px, 60px, 0); }
+                45% { clip: rect(25px, 9999px, 66px, 0); }
+                50% { clip: rect(57px, 9999px, 98px, 0); }
+                55% { clip: rect(5px, 9999px, 46px, 0); }
+                60% { clip: rect(82px, 9999px, 8px, 0); }
+                65% { clip: rect(54px, 9999px, 58px, 0); }
+                70% { clip: rect(28px, 9999px, 11px, 0); }
+                75% { clip: rect(45px, 9999px, 69px, 0); }
+                80% { clip: rect(23px, 9999px, 17px, 0); }
+                85% { clip: rect(97px, 9999px, 8px, 0); }
+                90% { clip: rect(55px, 9999px, 54px, 0); }
+                95% { clip: rect(55px, 9999px, 75px, 0); }
+                100% { clip: rect(67px, 9999px, 68px, 0); }
+            }
+            @keyframes glitch-anim-2 {
+                0% { clip: rect(65px, 9999px, 100px, 0); }
+                5% { clip: rect(38px, 9999px, 49px, 0); }
+                10% { clip: rect(81px, 9999px, 66px, 0); }
+                15% { clip: rect(51px, 9999px, 87px, 0); }
+                20% { clip: rect(17px, 9999px, 61px, 0); }
+                25% { clip: rect(88px, 9999px, 68px, 0); }
+                30% { clip: rect(15px, 9999px, 48px, 0); }
+                35% { clip: rect(97px, 9999px, 50px, 0); }
+                40% { clip: rect(10px, 9999px, 22px, 0); }
+                45% { clip: rect(49px, 9999px, 91px, 0); }
+                50% { clip: rect(37px, 9999px, 97px, 0); }
+                55% { clip: rect(8px, 9999px, 57px, 0); }
+                60% { clip: rect(46px, 9999px, 64px, 0); }
+                65% { clip: rect(51px, 9999px, 49px, 0); }
+                70% { clip: rect(9px, 9999px, 82px, 0); }
+                75% { clip: rect(46px, 9999px, 73px, 0); }
+                80% { clip: rect(47px, 9999px, 59px, 0); }
+                85% { clip: rect(5px, 9999px, 72px, 0); }
+                90% { clip: rect(5px, 9999px, 75px, 0); }
+                95% { clip: rect(73px, 9999px, 19px, 0); }
+                100% { clip: rect(20px, 9999px, 66px, 0); }
+            }
+            @keyframes glitch-anim-3 {
+                0% { clip: rect(32px, 9999px, 12px, 0); }
+                5% { clip: rect(23px, 9999px, 89px, 0); }
+                10% { clip: rect(93px, 9999px, 66px, 0); }
+                15% { clip: rect(17px, 9999px, 47px, 0); }
+                20% { clip: rect(63px, 9999px, 50px, 0); }
+                25% { clip: rect(96px, 9999px, 67px, 0); }
+                30% { clip: rect(48px, 9999px, 66px, 0); }
+                35% { clip: rect(30px, 9999px, 11px, 0); }
+                40% { clip: rect(59px, 9999px, 79px, 0); }
+                45% { clip: rect(5px, 9999px, 84px, 0); }
+                50% { clip: rect(72px, 9999px, 75px, 0); }
+                55% { clip: rect(44px, 9999px, 52px, 0); }
+                60% { clip: rect(11px, 9999px, 96px, 0); }
+                65% { clip: rect(83px, 9999px, 11px, 0); }
+                70% { clip: rect(25px, 9999px, 92px, 0); }
+                75% { clip: rect(38px, 9999px, 26px, 0); }
+                80% { clip: rect(7px, 9999px, 70px, 0); }
+                85% { clip: rect(47px, 9999px, 88px, 0); }
+                90% { clip: rect(5px, 9999px, 20px, 0); }
+                95% { clip: rect(38px, 9999px, 22px, 0); }
+                100% { clip: rect(69px, 9999px, 16px, 0); }
+            }
+        `;
+        document.head.appendChild(glitchStyle);
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script>
+        const dotAnimation = () => {
+            const container = document.createElement('div');
+            container.className = 'dot-animation';
+            document.body.appendChild(container);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.35);
+            container.appendChild(renderer.domElement);
+            const particles = 400;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particles * 3);
+            const velocities = new Float32Array(particles * 3);
+            for (let i = 0; i < particles; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 120;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 120;
+                velocities[i * 3] = (Math.random() - 0.5) * 0.015;
+                velocities[i * 3 + 1] = (Math.random() - 0.5) * 0.015;
+                velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.015;
+            }
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.4, 'rgba(255,255,255,1)');
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.PointsMaterial({
+                map: texture,
+                size: 0.7,
+                transparent: true,
+                opacity: 0.8,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending
+            });
+            const points = new THREE.Points(geometry, material);
+            scene.add(points);
+            camera.position.z = 80;
+            const animate = () => {
+                requestAnimationFrame(animate);
+                for (let i = 0; i < particles; i++) {
+                    positions[i * 3] += velocities[i * 3];
+                    positions[i * 3 + 1] += velocities[i * 3 + 1];
+                    positions[i * 3 + 2] += velocities[i * 3 + 2];
+                    if (Math.abs(positions[i * 3]) > 60) velocities[i * 3] *= -1;
+                    if (Math.abs(positions[i * 3 + 1]) > 40) velocities[i * 3 + 1] *= -1;
+                    if (Math.abs(positions[i * 3 + 2]) > 60) velocities[i * 3 + 2] *= -1;
+                }
+                geometry.attributes.position.needsUpdate = true;
+                renderer.render(scene, camera);
+            };
+            animate();
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight * 0.35);
+            });
+        };
+        window.addEventListener('load', dotAnimation);
+    </script>
+</body>
+</html>
