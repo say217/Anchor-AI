@@ -1,4 +1,4 @@
-# <img src="https://github.com/user-attachments/assets/4f05afaa-b7b7-471f-ae66-f1953a858fa3" alt="Anchor AI Logo"  margin-bottom="6px;" width="40" height="40"     style="border-radius:50%; vertical-align:middle;"/> Anchor AI: Mental Health Assistant for Students
+# <img src="https://github.com/user-attachments/assets/4f05afaa-b7b7-471f-ae66-f1953a858fa3" alt="Anchor AI Logo"  margin-bottom="6px;" width="40" height="40"     style="border-radius:50%; vertical-align:middle;"/> Anchor AI: Mental Health Assistant for Youths
 
 
 <table>
@@ -14,7 +14,7 @@
 
 ## Introduction
 
-Anchor AI is an empathetic, AI-powered mental health assistant designed specifically for students. It provides a safe and supportive space where users can check in on their mental well-being, manage tasks and goals, receive personalized recommendations, and engage in therapeutic conversations. With a strong focus on privacy, positivity, and accessibility, Anchor AI leverages natural language processing and real-time interactions to deliver encouragement, mood tracking, and practical tools for daily life management.
+Anchor AI is an empathetic, AI-powered mental health assistant designed specifically for Youths. It provides a safe and supportive space where users can check in on their mental well-being, manage tasks and goals, receive personalized recommendations, and engage in therapeutic conversations. With a strong focus on privacy, positivity, and accessibility, Anchor AI leverages natural language processing and real-time interactions to deliver encouragement, mood tracking, and practical tools for daily life management.
 
 **Important Disclaimer:** Anchor AI is not intended to replace professional mental health care. It serves only as a supportive, non-clinical tool. If you are experiencing a mental health crisis, please seek help from a licensed professional or emergency services.
 ## Project Structure
@@ -36,7 +36,7 @@ anchor-ai/
 ```
 ## Features
 
-Anchor AI offers a comprehensive set of features that address both student mental health and productivity. Its core mental health tools include check-ins that gently ask about mood, emotions, and daily experiences at the beginning of sessions. A specialized therapy mode can be activated by typing "therapy start," which initiates structured, psychiatrist-like conversations with deeper questions regarding stressors, sleep, relationships, and coping mechanisms. Each session concludes with a summary and personalized recommendations, such as meditation practices, self-care suggestions, or referrals to professional support. The platform also integrates mood tracking and analysis, using NLTK’s VADER sentiment analyzer to log moods and generate visual trend plots over the previous 48 hours. In addition, students can benefit from daily affirmations, guided 4-4-4 breathing exercises, and gratitude prompts that encourage listing three things they are thankful for, which are stored for future reflection.
+Anchor AI offers a comprehensive set of features that address both Youths mental health and productivity. Its core mental health tools include check-ins that gently ask about mood, emotions, and daily experiences at the beginning of sessions. A specialized therapy mode can be activated by typing "therapy start," which initiates structured, psychiatrist-like conversations with deeper questions regarding stressors, sleep, relationships, and coping mechanisms. Each session concludes with a summary and personalized recommendations, such as meditation practices, self-care suggestions, or referrals to professional support. The platform also integrates mood tracking and analysis, using NLTK’s VADER sentiment analyzer to log moods and generate visual trend plots over the previous 48 hours. In addition, students can benefit from daily affirmations, guided 4-4-4 breathing exercises, and gratitude prompts that encourage listing three things they are thankful for, which are stored for future reflection.
 
 Alongside mental health features, Anchor AI includes productivity and goal management tools. The task scheduler allows users to add, view, and remove tasks with reminders sent an hour before and at the due time. A maximum of ten tasks are supported, with the oldest being removed if the limit is exceeded. Similarly, the goal tracker enables students to set deadlines and receive reminders both one day before and on the deadline itself, with a maximum of ten goals stored at a time. Study tips are also provided, tailored to the user’s mood, which can include strategies such as the Pomodoro technique or visualization exercises to improve learning efficiency.
 
