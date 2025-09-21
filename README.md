@@ -128,7 +128,7 @@ graph TD
 
     %% Web Search
     H11 --> O1[Google_Search_API]
-    O1 --> O2[Parse_Content]
+    O1 --> O2[Parse_Content] 
     O2 --> C
 
     %% Background Tasks
