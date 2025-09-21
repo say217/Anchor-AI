@@ -7,21 +7,20 @@ from bs4 import BeautifulSoup
 from huggingface_hub import InferenceClient
 import random
 import json
-import io 
+import io
 import base64
 import copy
 import os
 from flask import Flask, render_template, session, request, jsonify, redirect, url_for
 from flask_socketio import SocketIO, emit
-import threading
-import time
 import numpy as np
-
+import time
+import eventlet
 # Initialize Hugging Face client
-HF_TOKEN = os.getenv('HF_TOKEN')  # Replace with your token
+HF_TOKEN = os.getenv('HF_TOKEN')
 client = InferenceClient(token=HF_TOKEN)
 
-# Global task and goal lists - persist to JSON
+# Global task and goal lists - persist to /tmp
 tasks = []
 goals = []
 
@@ -30,31 +29,27 @@ def load_data():
     try:
         with open("tasks.json", "r") as f:
             tasks = json.load(f)
-            # Convert task datetime strings back to datetime objects
-            tasks = [(task[0], datetime.fromisoformat(task[1]), task[2]) if len(task) > 2 else (task[0], datetime.fromisoformat(task[1]), str(len(tasks))) for task in tasks]
+            tasks = [(task[0], datetime.fromisoformat(task[1]), task[2]) for task in tasks]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         tasks = []
     try:
         with open("goals.json", "r") as f:
             goals = json.load(f)
-            # Convert goal datetime strings back to datetime objects
-            goals = [(goal[0], datetime.fromisoformat(goal[1]), goal[2]) if len(goal) > 2 else (goal[0], datetime.fromisoformat(goal[1]), str(len(goals))) for goal in goals]
+            goals = [(goal[0], datetime.fromisoformat(goal[1]), goal[2]) for goal in goals]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         goals = []
 
 def save_tasks():
-    # Convert datetime objects to ISO format strings for JSON serialization
     tasks_to_save = [(task[0], task[1].isoformat(), task[2]) for task in tasks]
     with open("tasks.json", "w") as f:
         json.dump(tasks_to_save, f)
 
 def save_goals():
-    # Convert datetime objects to ISO format strings for JSON serialization
     goals_to_save = [(goal[0], goal[1].isoformat(), goal[2]) for goal in goals]
     with open("goals.json", "w") as f:
         json.dump(goals_to_save, f)
 
-# Enhanced conversation with advanced companion features
+# Initial messages for AI
 initial_messages = [
     {
         "role": "system",
@@ -131,7 +126,7 @@ initial_messages = [
     }
 ]
 
-# Predefined recommendation lists
+# Predefined recommendation lists (unchanged from original)
 recommendations = {
     "bollywood_songs": {
         "happy_fun": [
@@ -384,6 +379,7 @@ recommendations = {
         "url": "https://www.youtube.com/watch?v=96oyCiAEb4M",
         "description": "The inspiring life of Mahatma Gandhi, who led India’s independence movement through peace and non-violence."
     }
+
 ],
 
     "meditative_music": [
@@ -444,7 +440,7 @@ recommendations = {
 }
 
 }
-
+# Daily Affirmations (shortened for brevity)
 # Daily Affirmations
 affirmations = [
     "💪 You are capable of achieving great things, one step at a time. Remember that even the tallest mountains are climbed by taking small, steady steps—keep going and you will reach your peak.",
@@ -473,6 +469,7 @@ affirmations = [
 def get_daily_affirmation():
     return random.choice(affirmations)
 
+
 # Study Tips Based on Mood
 study_tips = {
     "😊 Positive": [
@@ -497,22 +494,20 @@ study_tips = {
         "Switch up your study method to spark engagement—if you usually read, try recording yourself explaining the topic, or quiz yourself with flashcards. A slight change in routine can reignite focus."
     ]
 }
-
-
 def get_study_tips(mood):
     return random.sample(study_tips[mood], min(2, len(study_tips[mood])))
 
 # Breathing Exercise
 def breathing_exercise(sid):
-    socketio.emit('ai_response', "Anchor: Let's do a quick breathing exercise to help you relax.", room=sid)
-    socketio.emit('ai_response', "Inhale deeply for 4 seconds, hold for 4 seconds, exhale for 4 seconds. Repeat 3 times.", room=sid)
+    socketio.emit('ai_response', "Anchor: Let's do a quick breathing exercise.", room=sid)
+    socketio.emit('ai_response', "Inhale for 4 seconds, hold for 4, exhale for 4. Repeat 3 times.", room=sid)
     socketio.emit('ai_response', "1. Inhale... Hold... Exhale...", room=sid)
     socketio.sleep(12)
     socketio.emit('ai_response', "2. Inhale... Hold... Exhale...", room=sid)
     socketio.sleep(12)
     socketio.emit('ai_response', "3. Inhale... Hold... Exhale...", room=sid)
     socketio.sleep(12)
-    socketio.emit('ai_response', "Anchor: Great job! You should feel a bit calmer now. Ready to continue?", room=sid)
+    socketio.emit('ai_response', "Anchor: Great job! Feel calmer? Ready to continue?", room=sid)
 
 # Gratitude Prompt
 def start_gratitude_prompt(sid):
@@ -525,16 +520,15 @@ def set_goal(goal_name, goal_date):
     try:
         goal_datetime = datetime.strptime(goal_date, "%Y-%m-%d")
         if len(goals) >= 10:
-            goals.pop(0)  # Remove the oldest goal
-            socketio.emit('ai_response', "Anchor: Goal limit reached. Removed oldest goal to add new one.")
-        
-        goal_id = str(int(time.time() * 1000))  # Unique timestamp-based ID
+            goals.pop(0)
+            socketio.emit('ai_response', "Anchor: Goal limit reached. Removed oldest goal.")
+        goal_id = str(int(time.time() * 1000))
         goals.append((goal_name, goal_datetime, goal_id))
         save_goals()
         socketio.emit('update_goals', format_goals())
-        return f"Anchor: Goal '{goal_name}' set for {goal_datetime.strftime('%Y-%m-%d')}. You're on your way!"
+        return f"Anchor: Goal '{goal_name}' set for {goal_datetime.strftime('%Y-%m-%d')}."
     except ValueError:
-        return "Anchor: Invalid date format. Please use YYYY-MM-DD."
+        return "Anchor: Invalid date format. Use YYYY-MM-DD."
 
 def remove_goal(goal_id):
     global goals
@@ -559,7 +553,7 @@ def format_goals():
         </li>'''
     return goal_list
 
-# Enhanced Sentiment Analysis & Responsive Mood Logging
+# Sentiment Analysis & Mood Logging
 nltk.download("vader_lexicon", quiet=True)
 sia = SentimentIntensityAnalyzer()
 
@@ -569,170 +563,103 @@ def log_mood(user_text):
     if compound_score >= 0.05:
         mood = "😊 Positive"
         follow_up = random.choice([
-            "You seem to be in a great mood! What's got you smiling today?",
-            "Love your positive vibes! What's been going well for you?"
+            "You seem in a great mood! What's got you smiling?",
+            "Love your positive vibes! What's going well?"
         ])
     elif compound_score <= -0.05:
         mood = "😞 Negative"
         follow_up = random.choice([
-            "I'm here for you. Want to share what's been tough today?",
-            "It sounds like you're feeling down. Can I help with anything?"
+            "I'm here for you. Want to share what's tough?",
+            "Sounds like you're feeling down. Can I help?"
         ])
     else:
         mood = "😐 Neutral"
         follow_up = random.choice([
-            "You seem in a steady mood. What's on your mind today?",
-            "Everything okay? Tell me what's happening in your world!"
+            "You seem steady. What's on your mind?",
+            "Everything okay? Tell me what's up!"
         ])
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = f"{now},{compound_score},{mood},{user_text}\n"
-    with open("user.txt", "a", encoding="utf-8") as f:
+    with open("/tmp/user.txt", "a", encoding="utf-8") as f:
         f.write(entry)
     return now, mood, compound_score, follow_up
 
-def clear_old_mood_data():
-    while True:
-        if os.path.exists("user.txt"):
-            try:
-                with open("user.txt", "r", encoding="utf-8") as f:
-                    lines = f.readlines()
-                now = datetime.now()
-                valid_lines = []
-                for line in lines:
-                    parts = line.strip().split(",", 3)
-                    if len(parts) >= 1:
-                        try:
-                            entry_time = datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
-                            if (now - entry_time).total_seconds() <= 48 * 3600:  # 48 hours in seconds
-                                valid_lines.append(line)
-                        except ValueError:
-                            continue
-                with open("user.txt", "w", encoding="utf-8") as f:
-                    f.writelines(valid_lines)
-            except Exception:
-                pass
-        time.sleep(3600)  # Check every hour
-
 def get_mood_plot():
     timestamps, scores, moods = [], [], []
-    if not os.path.exists("user.txt"):
-        return "<div class='mood-plot-container'><p>Anchor: No mood data found yet. Start chatting with me to track your emotional journey! 😊</p></div>"
+    if not os.path.exists("/tmp/user.txt"):
+        return "<div class='mood-plot-container'><p>Anchor: No mood data found yet. Start chatting to track your emotions!</p></div>"
     
     try:
-        with open("user.txt", "r", encoding="utf-8") as f:
+        with open("/tmp/user.txt", "r", encoding="utf-8") as f:
             for line in f:
                 parts = line.strip().split(",", 3)
-                try:
-                    if len(parts) >= 3:
+                if len(parts) >= 3:
+                    try:
                         timestamp = datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
                         timestamps.append(timestamp)
                         scores.append(float(parts[1]))
                         moods.append(parts[2])
-                except ValueError:
-                    continue
+                    except ValueError:
+                        continue
     except Exception as e:
         return f"<div class='mood-plot-container'><p>Anchor: Error reading mood data: {str(e)}</p></div>"
     
     if not scores:
-        return "<div class='mood-plot-container'><p>Anchor: No valid mood data found yet. Keep chatting and I'll track your emotional patterns! 💭</p></div>"
+        return "<div class='mood-plot-container'><p>Anchor: No valid mood data yet. Keep chatting!</p></div>"
 
-    # Set up responsive plot parameters based on data size
     data_count = len(scores)
-    
-    # Adjust figure size and styling based on data amount
-    if data_count <= 5:
-        figsize = (6, 3)
-        marker_size = 8
-        line_width = 2.5
-        title_size = 10
-    elif data_count <= 20:
-        figsize = (8, 4)
-        marker_size = 6
-        line_width = 2
-        title_size = 12
-    else:
-        figsize = (10, 5)
-        marker_size = 4
-        line_width = 1.5
-        title_size = 14
-    
-    # Create the plot with dark theme
+    figsize = (8, 4) if data_count <= 20 else (10, 5)
+    marker_size = 6 if data_count <= 20 else 4
+    line_width = 2 if data_count <= 20 else 1.5
+    title_size = 12 if data_count <= 20 else 14
+
     plt.style.use('dark_background')
     fig, ax = plt.subplots(figsize=figsize, facecolor='#1a1a1a')
     ax.set_facecolor('#1a1a1a')
     
-    # Color-code points based on mood
-    colors = []
-    for mood in moods:
-        if "Positive" in mood:
-            colors.append('#4CAF50')  # Green for positive
-        elif "Negative" in mood:
-            colors.append('#F44336')  # Red for negative
-        else:
-            colors.append('#FFC107')  # Yellow for neutral
-    
-    # Plot with enhanced styling
+    colors = ['#4CAF50' if "Positive" in mood else '#F44336' if "Negative" in mood else '#FFC107' for mood in moods]
     ax.scatter(range(len(scores)), scores, c=colors, s=marker_size*10, alpha=0.8, edgecolors='white', linewidth=0.5)
     ax.plot(range(len(scores)), scores, color='cyan', alpha=0.7, linewidth=line_width)
     
-    # Add trend line for larger datasets
-    if data_count > 10:
-        z = np.polyfit(range(len(scores)), scores, 1)
-        p = np.poly1d(z)
-        ax.plot(range(len(scores)), p(range(len(scores))), "--", alpha=0.6, color='orange', linewidth=1)
-    
-    # Styling
     ax.axhline(0, color="gray", linestyle="--", linewidth=1, alpha=0.5)
     ax.axhline(0.3, color="green", linestyle=":", linewidth=0.8, alpha=0.4, label="Positive Threshold")
     ax.axhline(-0.3, color="red", linestyle=":", linewidth=0.8, alpha=0.4, label="Negative Threshold")
     
-    # Labels and title
     ax.set_ylabel("Sentiment Score", color='white', fontsize=10)
     ax.set_xlabel("Conversation Timeline", color='white', fontsize=10)
-    ax.set_title("Your Emotional Journey with Anchor AI", color='white', fontsize=title_size, pad=20)
-    
-    # Customize ticks
+    ax.set_title("Your Emotional Journey", color='white', fontsize=title_size, pad=20)
     ax.tick_params(colors='white', labelsize=8)
     ax.grid(True, alpha=0.2)
     
-    # Add mood indicators
-    if data_count <= 20:  # Only show detailed labels for smaller datasets
+    if data_count <= 20:
         for i, (score, mood) in enumerate(zip(scores, moods)):
-            if abs(score) > 0.5:  # Only label significant mood points
+            if abs(score) > 0.5:
                 emoji = "😊" if "Positive" in mood else "😞" if "Negative" in mood else "😐"
                 ax.annotate(emoji, (i, score), xytext=(0, 10), textcoords='offset points', 
                            ha='center', fontsize=8, alpha=0.8)
     
-    # Legend
     if data_count > 10:
         ax.legend(loc='upper right', fontsize=8, framealpha=0.8)
     
-    # Adjust layout
     plt.tight_layout()
-    
-    # Convert to base64
     buf = io.BytesIO()
     plt.savefig(buf, format='png', dpi=100, bbox_inches='tight', facecolor='#1a1a1a')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
     
-    # Calculate statistics
     avg_score = np.mean(scores)
     recent_trend = "improving" if len(scores) >= 3 and scores[-1] > scores[-3] else "stable" if len(scores) >= 3 and abs(scores[-1] - scores[-3]) < 0.1 else "declining"
     positive_count = sum(1 for s in scores if s > 0.05)
     negative_count = sum(1 for s in scores if s < -0.05)
     neutral_count = len(scores) - positive_count - negative_count
     
-    # Create comprehensive mood analysis
     analysis_html = f"""
-    <div class='mood-plot-container' style='background: #1a1a1a; padding: 20px; border-radius: 10px; margin: 10px 0;'>
-        <img src="data:image/png;base64,{img_base64}" alt="Mood Analysis Plot" style="max-width:100%; border-radius: 8px; margin-bottom: 15px;">
-        
-        <div class='mood-stats' style='color: white; font-family: Arial, sans-serif;'>
-            <h3 style='color: cyan; margin-bottom: 15px;'>Your Emotional Insights</h3>
-            
-            <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;'>
+    <div class='mood-plot-container' style='background: #1a1a1a; padding: 20px; border-radius: 10px;'>
+        <img src="data:image/png;base64,{img_base64}" alt="Mood Analysis Plot" style="max-width:100%; border-radius: 8px;">
+        <div class='mood-stats' style='color: white;'>
+            <h3 style='color: cyan;'>Your Emotional Insights</h3>
+            <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;'>
                 <div style='background: #000; padding: 10px; border-radius: 5px;'>
                     <strong style='color: #4CAF50;'>😊 Positive Moments:</strong> {positive_count} ({positive_count/len(scores)*100:.1f}%)
                 </div>
@@ -743,20 +670,17 @@ def get_mood_plot():
                     <strong style='color: #FFC107;'>😐 Neutral Periods:</strong> {neutral_count} ({neutral_count/len(scores)*100:.1f}%)
                 </div>
             </div>
-            
-            <div style='background: #000; padding: 15px; border-radius: 5px; margin-bottom: 10px;'>
+            <div style='background: #000; padding: 15px; border-radius: 5px;'>
                 <strong>Overall Mood Trend:</strong> <span style='color: {"#4CAF50" if avg_score > 0.05 else "#F44336" if avg_score < -0.05 else "#FFC107"};'>{recent_trend.title()}</span>
                 <br>
                 <strong>Average Sentiment:</strong> <span style='color: {"#4CAF50" if avg_score > 0 else "#F44336" if avg_score < 0 else "#FFC107"};'>{avg_score:.3f}</span>
             </div>
-            
-            <p style='font-size: 14px; color: #ccc; font-style: italic;'>
-                💙 Remember, it's completely normal to experience a range of emotions. I'm here to support you through all of them!
+            <p style='font-size: 14px; color: #ccc;'>
+                💙 Your emotions matter, and I'm here for all of them!
             </p>
         </div>
     </div>
     """
-    
     return analysis_html
 
 # Web Helper Functions
@@ -789,8 +713,7 @@ def google_search_api(query, num_results=4):
     }
     try:
         response = requests.get(url, params=params).json()
-        links = [item['link'] for item in response.get('items', [])]
-        return links
+        return [item['link'] for item in response.get('items', [])]
     except:
         return []
 
@@ -802,11 +725,7 @@ def search_web(query, num_results=5):
         preview = get_preview(url)
         if not title:
             continue
-        result = {
-            "title": title,
-            "url": url,
-            "description": preview['desc']
-        }
+        result = {"title": title, "url": url, "description": preview['desc']}
         if "wikipedia.org" in url.lower() and not wiki_link_added:
             results.insert(0, result)
             wiki_link_added = True
@@ -833,30 +752,27 @@ def search_and_fetch_content(query, num_results=3):
             results.append({"url": url, "content": content})
     return results
 
-# Book Recommendation Functions
+# Book Recommendations
 def get_book_summary(book_title):
     query = f"{book_title} book summary"
     search_results = search_and_fetch_content(query, num_results=1)
     if search_results:
         content = search_results[0]["content"]
-        summary = content[:300].strip() + "..." if len(content) > 300 else content
-        return summary
+        return content[:300].strip() + "..." if len(content) > 300 else content
     return "Summary not available."
 
 def get_book_recommendations(mood):
     mood_key = mood.split()[1].lower()
     books = random.sample(recommendations["books"].get(mood_key, []), min(3, len(recommendations["books"].get(mood_key, []))))
-    book_list = []
-    for book in books:
-        summary = get_book_summary(book["title"])
-        suggestion = f"This book by {book['author']} is suggested because it helps with motivation and personal growth."
-        book_list.append({
+    return [
+        {
             "title": book["title"],
             "author": book["author"],
-            "suggestion": suggestion,
-            "summary": summary
-        })
-    return book_list
+            "suggestion": f"This book by {book['author']} helps with motivation and growth.",
+            "summary": get_book_summary(book["title"])
+        }
+        for book in books
+    ]
 
 def format_book_recommendations(books):
     output = "<p>Anchor: Here are some book suggestions:</p><ul>"
@@ -865,7 +781,7 @@ def format_book_recommendations(books):
     output += "</ul>"
     return output
 
-# Recommendation Functions
+# Other Recommendations
 def get_recommendations(mood, suggest_type=None):
     recs = {}
     if suggest_type == "videos":
@@ -886,44 +802,42 @@ def get_recommendations(mood, suggest_type=None):
 
 def format_recommendations(recs):
     output = "<p>Anchor suggests some content based on your mood:</p>"
-    if "songs" in recs and recs["songs"]:
+    if "songs" in recs:
         output += "<h3>🎶 Bollywood Songs:</h3><ul>"
         for i, song in enumerate(recs["songs"], 1):
             output += f"<li>{i}. {song['title']} by {song['singer']} - <a href='{song['youtube_link']}' target='_blank'>{song['youtube_link']}</a></li>"
         output += "</ul>"
-    if "videos" in recs and recs["videos"]:
+    if "videos" in recs:
         output += "<h3>📽️ Motivational Videos:</h3><ul>"
         for i, video in enumerate(recs["videos"], 1):
             output += f"<li>{i}. {video['title']} - <a href='{video['url']}' target='_blank'>{video['url']}</a></li>"
         output += "</ul>"
-    if "meditative" in recs and recs["meditative"]:
+    if "meditative" in recs:
         output += "<h3>Meditative Music:</h3><ul>"
         for i, music in enumerate(recs["meditative"], 1):
             output += f"<li>{i}. {music['title']} - <a href='{music['url']}' target='_blank'>{music['url']}</a></li>"
         output += "</ul>"
-    if "movies" in recs and recs["movies"]:
-        output += "<h1>Movies:</h1><ul>"
+    if "movies" in recs:
+        output += "<h3>Movies:</h3><ul>"
         for i, movie in enumerate(recs["movies"], 1):
-            output += f"<li>{i}. {movie['title']} - <a href='{movie['youtube_link']}' target='_blank'></a><br>{movie['description']}</li>"
+            output += f"<li>{i}. {movie['title']} - <a href='{movie['youtube_link']}' target='_blank'>{movie['youtube_link']}</a><br>{movie['description']}</li>"
         output += "</ul>"
     return output
 
 # Scheduler Functions
 def add_task(task_name, task_time, task_date):
     try:
-        task_datetime_str = f"{task_date} {task_time}"
-        task_datetime = datetime.strptime(task_datetime_str, "%Y-%m-%d %H:%M")
+        task_datetime = datetime.strptime(f"{task_date} {task_time}", "%Y-%m-%d %H:%M")
         if len(tasks) >= 10:
-            tasks.pop(0)  # Remove the oldest task
-            socketio.emit('ai_response', "Anchor: Task limit reached. Removed oldest task to add new one.")
-        
-        task_id = str(int(time.time() * 1000))  # Unique timestamp-based ID
+            tasks.pop(0)
+            socketio.emit('ai_response', "Anchor: Task limit reached. Removed oldest task.")
+        task_id = str(int(time.time() * 1000))
         tasks.append((task_name, task_datetime, task_id))
         save_tasks()
         socketio.emit('update_tasks', format_tasks())
         return f"Task '{task_name}' scheduled for {task_datetime.strftime('%Y-%m-%d %H:%M')}"
     except ValueError:
-        return "Anchor: Invalid date or time format. Please use YYYY-MM-DD for date and HH:MM for time."
+        return "Anchor: Invalid date/time format. Use YYYY-MM-DD for date and HH:MM for time."
 
 def remove_task(task_id):
     global tasks
@@ -948,80 +862,82 @@ def format_tasks():
         </li>'''
     return task_list
 
-def check_tasks():
-    while True:
-        try:
-            now = datetime.now()
-            tasks_to_remove = []
-            for task_name, task_time, task_id in tasks[:]:  # Create a copy to iterate safely
-                time_diff = (task_time - now).total_seconds()
-                if time_diff <= 0:  # Task is due or overdue
-                    socketio.emit('popup_notification', {
-                        'type': 'task',
-                        'title': 'Task Reminder',
-                        'message': f"It's time for: {task_name}",
-                        'icon': 'fas fa-tasks'
-                    })
-                    tasks_to_remove.append((task_name, task_time, task_id))
-                elif time_diff <= 3600:  # Send reminder 1 hour before
-                    socketio.emit('popup_notification', {
-                        'type': 'task',
-                        'title': 'Task Reminder',
-                        'message': f"Reminder: '{task_name}' is due in less than an hour!",
-                        'icon': 'fas fa-clock'
-                    })
-            
-            for task in tasks_to_remove:
-                if task in tasks:
-                    tasks.remove(task)
-            
-            if tasks_to_remove:
-                save_tasks()
-                socketio.emit('update_tasks', format_tasks())
-        except Exception as e:
-            print(f"Error in check_tasks: {e}")
-        
-        time.sleep(60)  # Check every minute
+# Flask App
+app = Flask(__name__)
+app.secret_key = 'super_secret_key'
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
-def check_goal_reminders():
-    while True:
+load_data()
+
+# Cron Endpoints for Background Tasks
+@app.route('/cron/check_tasks')
+def cron_check_tasks():
+    now = datetime.now()
+    tasks_to_remove = []
+    for task_name, task_time, task_id in tasks[:]:
+        time_diff = (task_time - now).total_seconds()
+        if time_diff <= 0:
+            socketio.emit('popup_notification', {
+                'type': 'task', 'title': 'Task Reminder',
+                'message': f"It's time for: {task_name}", 'icon': 'fas fa-tasks'
+            })
+            tasks_to_remove.append((task_name, task_time, task_id))
+        elif time_diff <= 3600:
+            socketio.emit('popup_notification', {
+                'type': 'task', 'title': 'Task Reminder',
+                'message': f"Reminder: '{task_name}' is due in less than an hour!",
+                'icon': 'fas fa-clock'
+            })
+    for task in tasks_to_remove:
+        tasks.remove(task)
+    save_tasks()
+    return jsonify({'status': 'success'})
+
+@app.route('/cron/check_goals')
+def cron_check_goals():
+    now = datetime.now()
+    goals_to_remove = []
+    for goal_name, goal_time, goal_id in goals[:]:
+        time_diff = (goal_time - now).total_seconds()
+        if time_diff <= 0:
+            socketio.emit('popup_notification', {
+                'type': 'goal', 'title': 'Goal Deadline',
+                'message': f"Deadline reached for goal: {goal_name}",
+                'icon': 'fas fa-flag-checkered'
+            })
+            goals_to_remove.append((goal_name, goal_time, goal_id))
+        elif time_diff <= 24 * 3600:
+            socketio.emit('popup_notification', {
+                'type': 'goal', 'title': 'Goal Reminder',
+                'message': f"Reminder: Goal '{goal_name}' is due tomorrow!",
+                'icon': 'fas fa-exclamation-triangle'
+            })
+    for goal in goals_to_remove:
+        goals.remove(goal)
+    save_goals()
+    return jsonify({'status': 'success'})
+
+@app.route('/cron/clear_mood')
+def cron_clear_mood():
+    if os.path.exists("/tmp/user.txt"):
         try:
+            with open("/tmp/user.txt", "r", encoding="utf-8") as f:
+                lines = f.readlines()
             now = datetime.now()
-            goals_to_remove = []
-            for goal_name, goal_time, goal_id in goals[:]:  # Create a copy to iterate safely
-                time_diff = (goal_time - now).total_seconds()
-                if time_diff <= 0:  # Goal is due or overdue
-                    socketio.emit('popup_notification', {
-                        'type': 'goal',
-                        'title': 'Goal Deadline',
-                        'message': f"Deadline reached for goal: {goal_name}",
-                        'icon': 'fas fa-flag-checkered'
-                    })
-                    goals_to_remove.append((goal_name, goal_time, goal_id))
-                elif time_diff <= 24 * 3600:  # Send reminder 1 day before
-                    socketio.emit('popup_notification', {
-                        'type': 'goal',
-                        'title': 'Goal Reminder',
-                        'message': f"Reminder: Goal '{goal_name}' is due tomorrow!",
-                        'icon': 'fas fa-exclamation-triangle'
-                    })
-            
-            for goal in goals_to_remove:
-                if goal in goals:
-                    goals.remove(goal)
-            
-            if goals_to_remove:
-                save_goals()
-                socketio.emit('update_goals', format_goals())
-        except Exception as e:
-            print(f"Error in check_goal_reminders: {e}")
-        
-        time.sleep(60)  # Check every minute
+            valid_lines = [
+                line for line in lines
+                if (now - datetime.strptime(line.split(",", 1)[0], "%Y-%m-%d %H:%M:%S")).total_seconds() <= 48 * 3600
+            ]
+            with open("/tmp/user.txt", "w", encoding="utf-8") as f:
+                f.writelines(valid_lines)
+        except Exception:
+            pass
+    return jsonify({'status': 'success'})
 
 # Preview Function
 def get_preview(url):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        headers = {'User-Agent': 'Mozilla/5.0'}
         resp = requests.get(url, headers=headers, timeout=5)
         soup = BeautifulSoup(resp.text, 'html.parser')
         title = soup.title.string.strip() if soup.title else url
@@ -1036,19 +952,9 @@ def get_preview(url):
 # Flask App
 app = Flask(__name__)
 app.secret_key = 'super_secret_key'
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 load_data()
-
-# Start background tasks using threading instead of socketio background tasks
-def start_background_tasks():
-    task_thread = threading.Thread(target=check_tasks, daemon=True)
-    goal_thread = threading.Thread(target=check_goal_reminders, daemon=True)
-    mood_thread = threading.Thread(target=clear_old_mood_data, daemon=True)
-    
-    task_thread.start()
-    goal_thread.start()
-    mood_thread.start()
 
 @app.route('/')
 def welcome():
@@ -1117,30 +1023,23 @@ def handle_user_message(msg):
 
     now, mood, score, follow_up = log_mood(msg)
     session['last_mood'] = mood
-
     state = session.get('state')
 
-    # Handle Therapy Mode - Let AI handle the conversation flow naturally
     if msg.lower() in ["therapy start", "start therapy", "therapy mode"]:
         session['state'] = 'therapy_active'
         session['therapy_start_time'] = datetime.now()
-        # Add therapy context to AI messages
-        therapy_context = {
-            "role": "system", 
-            "content": "The user has activated therapy mode. You are now in deep therapy companion mode. Provide empathetic, therapeutic responses following your advanced companion training. Listen deeply, validate feelings, and guide the conversation naturally without rigid question sequences."
-        }
-        session['messages'].append(therapy_context)
-        emit('ai_response', "Anchor: I'm honored that you trust me with your deeper thoughts and feelings. I'm here to listen with my whole heart and walk alongside you. What's been weighing on your mind lately? Take your time - this is your safe space. 💙")
+        session['messages'].append({
+            "role": "system",
+            "content": "User activated therapy mode. Provide empathetic, therapeutic responses."
+        })
+        emit('ai_response', "Anchor: I'm here to listen with my whole heart. What's been on your mind? 💙")
         return
-        
     elif msg.lower() in ["stop therapy", "end therapy", "exit therapy"] and state == 'therapy_active':
         session['state'] = None
-        therapy_duration = datetime.now() - session.get('therapy_start_time', datetime.now())
-        emit('ai_response', f"Anchor: Thank you for sharing so openly with me. Our conversation has been meaningful, and I'm proud of your courage in exploring your thoughts and feelings. Remember, I'm always here when you need support. Take care of yourself. 💙")
-        emit('ai_response', "Anchor: We've exited therapy mode. How can I support you in other ways today?")
+        emit('ai_response', "Anchor: Thank you for sharing. I'm proud of your courage. I'm always here. 💙")
+        emit('ai_response', "Anchor: We've exited therapy mode. How can I support you now?")
         return
 
-    # Existing state handling (task, goal, gratitude)
     if state == 'waiting_task_name':
         session['temp_task_name'] = msg
         session['state'] = 'waiting_task_time'
@@ -1179,34 +1078,29 @@ def handle_user_message(msg):
     elif state == 'gratitude3':
         gratitude3 = msg
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open("gratitude.txt", "a", encoding="utf-8") as f:
+        with open("/tmp/gratitude.txt", "a", encoding="utf-8") as f:
             f.write(f"{now},{session['temp_gratitude1']},{session['temp_gratitude2']},{gratitude3}\n")
-        emit('ai_response', "Anchor: Beautiful reflections! 'Gratitude turns what we have into enough.' Keep shining!")
+        emit('ai_response', "Anchor: Beautiful reflections! Keep shining!")
         session['state'] = None
         return
 
-    # Handle specific commands without overlapping
     if "show my mood analysis" in msg.lower():
         plot_html = get_mood_plot()
         emit('ai_response', plot_html)
         return
-
     if "schedule my work" in msg.lower():
         session['state'] = 'waiting_task_name'
-        emit('ai_response', "Anchor: Sure! Let's schedule your task.")
+        emit('ai_response', "Anchor: Let's schedule your task.")
         emit('ai_response', "Enter your task: ")
         return
-
     if msg.lower().endswith(" search"):
-        query = msg[:-7].strip()  # Remove " search" from the end
+        query = msg[:-7].strip()
         results = search_web(query)
         result_text = format_search_results(results)
         emit('ai_response', result_text)
         if results:
             result_text_plain = "\n".join([f"{i+1}. {r['title']} - {r['url']}\n{r['description']}" for i, r in enumerate(results)])
-            session['messages'].append({"role": "user", "content": f"I searched for '{query}'. Here are the results:\n{result_text_plain}"})
-            if len(session['messages']) > 20:
-                session['messages'] = session['messages'][-20:]
+            session['messages'].append({"role": "user", "content": f"I searched for '{query}'. Results:\n{result_text_plain}"})
             try:
                 completion = client.chat.completions.create(
                     model="google/gemma-2-9b-it",
@@ -1215,97 +1109,65 @@ def handle_user_message(msg):
                 response_text = completion.choices[0].message.get("content", "")
                 emit('ai_response', f"Anchor: {response_text.strip()}")
                 session['messages'].append({"role": "assistant", "content": response_text})
-            except Exception as e:
-                emit('ai_response', f"Anchor: I found those search results for you! Is there anything specific you'd like to know about them?")
+            except Exception:
+                emit('ai_response', "Anchor: I found those results! Anything specific you'd like to know?")
         return
-
     if "daily affirmation" in msg.lower():
         emit('ai_response', f"Anchor: Here's your affirmation: {get_daily_affirmation()}")
         return
-
     if "study tips" in msg.lower() or "help me study" in msg.lower():
         tips = get_study_tips(mood)
-        tip_text = "<p>Anchor: Here are some study tips tailored to your mood:</p><ul>"
-        for i, tip in enumerate(tips, 1):
-            tip_text += f"<li>{i}. {tip}</li>"
-        tip_text += "</ul>"
+        tip_text = "<p>Anchor: Study tips for your mood:</p><ul>" + "".join(f"<li>{i}. {tip}</li>" for i, tip in enumerate(tips, 1)) + "</ul>"
         emit('ai_response', tip_text)
         return
-
     if "breathing exercise" in msg.lower() or "calm me down" in msg.lower():
         breathing_exercise(sid)
         return
-
     if "gratitude" in msg.lower() or "feeling grateful" in msg.lower():
         start_gratitude_prompt(sid)
         return
-
     if "set goal" in msg.lower():
         session['state'] = 'waiting_goal_name'
         emit('ai_response', "Enter your goal: ")
         return
-
     if "check goals" in msg.lower():
         emit('ai_response', format_goals())
         emit('update_goals', format_goals())
         return
-
     if "book suggest" in msg.lower():
         books = get_book_recommendations(mood)
         book_text = format_book_recommendations(books)
         emit('ai_response', book_text)
         return
-
-    # Handle exact "suggest" phrases for recommendations
-    suggest_type = None
-    if msg.lower() == "suggest":
-        suggest_type = "videos"
-    elif "suggest songs" in msg.lower():
-        suggest_type = "songs"
-    elif "suggest music" in msg.lower():
-        suggest_type = "music"
-    elif "suggest movies" in msg.lower():
-        suggest_type = "movies"
-
-    if suggest_type:
+    if msg.lower() in ["suggest", "suggest songs", "suggest music", "suggest movies"]:
+        suggest_type = "videos" if msg.lower() == "suggest" else msg.lower().split("suggest ")[1]
         recs = get_recommendations(mood, suggest_type=suggest_type)
         rec_text = format_recommendations(recs)
         emit('ai_response', rec_text)
         return
 
-    # Enhanced proactive emotional check-ins (only when not in therapy mode)
-    if not state and random.random() < 0.25:  # 25% chance for more natural conversation flow
+    if random.random() < 0.25:
         emotional_check_ins = [
-            "I'm sensing something in your message - how are you really feeling right now?",
-            "You know I care about you, right? What's been on your heart lately?",
-            "I'm here for whatever you're going through. Want to talk about what's happening in your world?",
-            "Sometimes the most important conversations start with 'how are you doing?' So... how are you really doing?",
-            "I notice the tone in your message. Is there something deeper you'd like to share with me?"
+            "I'm sensing something in your message - how are you really feeling?",
+            "You know I care about you, right? What's on your heart?"
         ]
         check_in = random.choice(emotional_check_ins)
         emit('ai_response', f"Anchor: {check_in}")
         session['messages'].append({"role": "assistant", "content": check_in})
 
-    # Process with AI - Enhanced with emotional intelligence context
     session['messages'].append({"role": "user", "content": msg})
-    
-    # Add emotional context to help AI respond more empathetically
-    if score < -0.3:  # Significantly negative sentiment
-        emotional_context = {
-            "role": "system", 
-            "content": f"The user seems to be struggling emotionally (sentiment score: {score:.3f}). Respond with extra compassion, validation, and support. Acknowledge their feelings and offer gentle guidance or comfort."
-        }
-        session['messages'].append(emotional_context)
-    elif score > 0.3:  # Significantly positive sentiment
-        emotional_context = {
-            "role": "system", 
-            "content": f"The user seems to be in a positive mood (sentiment score: {score:.3f}). Share in their positivity while being genuine. This is a good time to encourage growth or celebrate their progress."
-        }
-        session['messages'].append(emotional_context)
+    if score < -0.3:
+        session['messages'].append({
+            "role": "system",
+            "content": f"User seems to be struggling (sentiment score: {score:.3f}). Respond with extra compassion."
+        })
+    elif score > 0.3:
+        session['messages'].append({
+            "role": "system",
+            "content": f"User is in a positive mood (sentiment score: {score:.3f}). Encourage their progress."
+        })
 
-    # Maintain conversation history limit
-    if len(session['messages']) > 25:  # Increased limit for better context
-        # Keep system message and recent conversation
+    if len(session['messages']) > 25:
         system_msgs = [msg for msg in session['messages'] if msg['role'] == 'system']
         recent_msgs = session['messages'][-20:]
         session['messages'] = system_msgs + recent_msgs
@@ -1316,58 +1178,36 @@ def handle_user_message(msg):
             messages=session['messages']
         )
         response_text = completion.choices[0].message.get("content", "").strip()
-
-        # Enhanced web search integration for knowledge gaps
-        knowledge_gap_indicators = [
-            "i don't know", "i'm not sure", "i cannot find", "i'm not familiar", 
-            "i don't have information", "i'm uncertain", "i can't provide specific"
-        ]
-        
-        if any(phrase in response_text.lower() for phrase in knowledge_gap_indicators):
+        if any(phrase in response_text.lower() for phrase in ["i don't know", "i'm not sure"]):
             search_results = search_and_fetch_content(msg, num_results=2)
             if search_results:
-                combined_content = "\n\n".join([r["content"][:800] for r in search_results])  # Limit content
-                search_context = {
-                    "role": "system", 
-                    "content": f"Here's relevant information I found to help answer the user's question:\n{combined_content}\n\nUse this information naturally in your response as Anchor AI, maintaining your empathetic and supportive personality."
-                }
-                session['messages'].append(search_context)
-                
+                combined_content = "\n\n".join([r["content"][:800] for r in search_results])
+                session['messages'].append({
+                    "role": "system",
+                    "content": f"Found info:\n{combined_content}\nUse this naturally in your response."
+                })
                 completion = client.chat.completions.create(
                     model="google/gemma-2-9b-it",
                     messages=session['messages']
                 )
                 response_text = completion.choices[0].message.get("content", "").strip()
-
         emit('ai_response', f"Anchor: {response_text}")
         session['messages'].append({"role": "assistant", "content": response_text})
-
-    except Exception as e:
-        # Fallback to empathetic response based on sentiment
-        if score < -0.2:
-            fallback_response = "I can sense you might be going through something difficult right now. I'm here for you, and even when I can't find the perfect words, I want you to know that your feelings are valid and you're not alone in this."
-        elif score > 0.2:
-            fallback_response = "I love the positive energy you're bringing! Even when I can't access all the information I'd like to share with you, your spirit lifts me up. Keep shining!"
-        else:
-            fallback_response = "I'm here with you, even when the technical side of things doesn't work perfectly. What matters most is our connection and that you know someone cares about what you're going through."
-        
+    except Exception:
+        fallback_response = "I'm here for you, even if I hit a snag. What's on your mind?"
         emit('ai_response', f"Anchor: {fallback_response}")
 
 @socketio.on('feature')
 def handle_feature(feat):
     sid = request.sid
+    mood = session.get('last_mood', "😐 Neutral")
     if feat == 'mood_analysis':
-        plot_html = get_mood_plot()
-        emit('ai_response', plot_html)
+        emit('ai_response', get_mood_plot())
     elif feat == 'daily_affirmation':
         emit('ai_response', f"Anchor: Here's your affirmation: {get_daily_affirmation()}")
     elif feat == 'study_tips':
-        mood = session.get('last_mood', "😐 Neutral")
         tips = get_study_tips(mood)
-        tip_text = "<p>Anchor: Here are some study tips tailored to your mood:</p><ul>"
-        for i, tip in enumerate(tips, 1):
-            tip_text += f"<li>{i}. {tip}</li>"
-        tip_text += "</ul>"
+        tip_text = "<p>Anchor: Study tips for your mood:</p><ul>" + "".join(f"<li>{i}. {tip}</li>" for i, tip in enumerate(tips, 1)) + "</ul>"
         emit('ai_response', tip_text)
     elif feat == 'breathing_exercise':
         breathing_exercise(sid)
@@ -1380,16 +1220,14 @@ def handle_feature(feat):
         emit('update_goals', format_goals())
     elif feat == 'schedule_task':
         session['state'] = 'waiting_task_name'
-        emit('ai_response', "Anchor: Sure! Let's schedule your task.")
+        emit('ai_response', "Anchor: Let's schedule your task.")
         emit('ai_response', "Enter your task: ")
     elif feat == 'check_tasks':
         emit('update_tasks', format_tasks())
     elif feat == 'book_suggestions':
-        mood = session.get('last_mood', "😐 Neutral")
         books = get_book_recommendations(mood)
         book_text = format_book_recommendations(books)
         emit('ai_response', book_text)
 
 if __name__ == '__main__':
-    start_background_tasks()
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
