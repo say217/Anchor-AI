@@ -54,7 +54,7 @@ As you can see here, the complete diagram provides a high-level overview while a
 graph TD
     %% User Access
     A[User] -->|Accesses| B[Welcome_Page]
-    B -->|Get_Started| C[Chat_Interface]
+    B -->|Get_Started| C[Chat_Interface] 
 
     %% Backend
     C --> D[Flask_App]
