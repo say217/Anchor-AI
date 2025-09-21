@@ -50,8 +50,8 @@ The technical design of Anchor AI prioritizes user experience. It provides real-
 
 ## Complete system Flowchart
 
-This diagram provides a high-level overview while capturing the detailed interactions between components, making it easier to understand the project's architecture.
-```mermaid
+As you can see here, the complete diagram provides a high-level overview while also capturing the detailed interactions between different components. This makes it much easier to understand the overall project architecture, the flow of data, and how each module communicates with the others.
+```mermaid 
 graph TD
     %% User Access
     A[User] -->|Accesses| B[Welcome_Page]
