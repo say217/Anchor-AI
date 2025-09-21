@@ -31,7 +31,6 @@ anchor-ai/
 |── last_reset.txt        #last reset data
 ├── user.txt              # Mood logs
 ├── gratitude.txt         # Gratitude entries
-|── vercel.json
 ├── README.md             # Documentation
 └── .env                  # Environment variables (excluded from version control)
 ```
