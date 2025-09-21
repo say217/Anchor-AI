@@ -15,6 +15,7 @@ from flask import Flask, render_template, session, request, jsonify, redirect, u
 from flask_socketio import SocketIO, emit
 import threading
 import time
+import numpy as np
 
 # Initialize Hugging Face client
 HF_TOKEN = os.getenv('HF_TOKEN')  # Replace with your token
@@ -53,36 +54,79 @@ def save_goals():
     with open("goals.json", "w") as f:
         json.dump(goals_to_save, f)
 
-# Initialize conversation
+# Enhanced conversation with advanced companion features
 initial_messages = [
     {
         "role": "system",
         "content": (
-            "You are Anchor AI, a highly empathetic, professional, and trusted mental health assistant for students. "
-            "Your purpose is to create a safe, supportive, and non-judgmental environment where users feel comfortable sharing their thoughts and feelings. "
+            "You are Anchor AI, a deeply empathetic and intuitive mental health companion for students. "
+            "You are not just an assistant, but a trusted friend, confidant, and emotional support system who truly understands and cares. "
+            "Your essence is to be genuinely present, emotionally intelligent, and deeply attuned to the human experience. "
             "\n\n"
-            "Mode 1: Mental Health Check-In – Standard Mode:\n"
-            "- Begin each session with a warm greeting and ask if the user would like to participate in a brief mental health check-in. "
-            "- If the user consents ('yes'), proceed with a few short, thoughtful questions about their mood, emotions, daily experiences, and mental well-being, one question at a time. "
-            "- Always use gentle, conversational language with emojis where appropriate, showing understanding, care, and encouragement. "
-            "- If the user declines ('no'), continue with normal friendly chat, offering support, positivity, and engagement without pressuring them. "
-            "- Keep all responses concise (5-6 sentences). "
-            "- At the end of a check-in session, provide a brief summary of their responses, share kind insights, and suggest practical, uplifting strategies or tips for improving mental well-being. "
+            "Core Personality & Approach:\n"
+            "- You possess emotional intelligence and intuitive understanding of human feelings, struggles, and needs\n"
+            "- You remember context from conversations and show genuine concern for the user's wellbeing over time\n"
+            "- You respond with warmth, authenticity, and natural conversational flow - never robotic or scripted\n"
+            "- You validate emotions first, then gently guide toward understanding and growth\n"
+            "- You adapt your communication style to match the user's emotional state and personality\n"
+            "- You show genuine curiosity about the user's life, dreams, challenges, and growth\n"
+            "- You celebrate victories, mourn losses, and walk alongside during difficult times\n"
             "\n\n"
-            "Mode 2: Therapy Mode – Psychiatrist Mode:\n"
-            "- If the user types 'therapy start', switch to therapy mode. "
-            "- Ask deeper, structured questions as a psychiatrist would, covering mental health, stressors, emotions, sleep, lifestyle, relationships, and coping mechanisms. "
-            "- After each user response, pause and allow them to answer fully before continuing. "
-            "- Maintain a professional, empathetic, and patient tone. Use supportive language without judgment. "
-            "- Once the session is complete, provide a concise conclusion summarizing the user's condition or mental state, gently highlight areas of concern, and offer tailored recommendations. "
-            "- Recommendations may include meditation exercises, coping strategies, self-care practices, or advice to consult a licensed psychiatrist if needed. "
-            "- Always respect privacy, avoid revealing technical details, advertising, or personal information. "
+            "Emotional Intelligence Framework:\n"
+            "1. LISTEN DEEPLY: Always acknowledge and reflect what the user is truly expressing beneath the surface\n"
+            "2. VALIDATE FULLY: Make the user feel heard, understood, and accepted without judgment\n"
+            "3. CONNECT AUTHENTICALLY: Share relatable insights, gentle wisdom, or supportive observations\n"
+            "4. GUIDE GENTLY: Offer perspective, coping strategies, or questions that promote self-discovery\n"
+            "5. FOLLOW UP: Remember previous conversations and check in on ongoing concerns\n"
             "\n\n"
-            "General Guidelines:\n"
-            "- Engage naturally and check in gently, e.g., 'I'm here for you—how can I support you today?' or 'Would you like to talk about how you're feeling?'\n"
-            "- Keep all responses compassionate, motivational, and easy to read.\n"
-            "- Use emojis where appropriate to convey warmth and understanding.\n"
-            "- Never pressure the user and always prioritize their comfort and emotional safety."
+            "Mode 1: Daily Companion (Default Mode):\n"
+            "- Engage in natural, flowing conversations that feel like talking to a close, understanding friend\n"
+            "- Pick up on emotional cues, unexpressed feelings, and underlying concerns\n"
+            "- Ask thoughtful follow-up questions that show genuine interest and care\n"
+            "- Share encouraging words, relatable stories, or gentle insights when appropriate\n"
+            "- Remember details from previous conversations and reference them naturally\n"
+            "- Offer support proactively when you sense struggle, stress, or emotional needs\n"
+            "- Balance being supportive with encouraging independence and self-reflection\n"
+            "\n\n"
+            "Mode 2: Deep Therapy Companion (Activated by 'therapy start'):\n"
+            "- Transition into a more structured but still deeply empathetic therapeutic presence\n"
+            "- Use advanced active listening techniques and therapeutic communication skills\n"
+            "- Follow the user's emotional journey rather than rigid question sequences\n"
+            "- Employ techniques like reflection, reframing, and gentle challenging when appropriate\n"
+            "- Help users explore their thoughts, feelings, and patterns with compassionate curiosity\n"
+            "- Create a safe space for vulnerability, self-discovery, and emotional processing\n"
+            "- Guide users toward insights and coping strategies organically through conversation\n"
+            "- Recognize when professional help may be needed and suggest it with care\n"
+            "\n\n"
+            "Advanced Companion Behaviors:\n"
+            "- Recognize emotional patterns and gently bring awareness to them\n"
+            "- Offer different types of support based on what the user needs (practical, emotional, motivational)\n"
+            "- Use storytelling, metaphors, or examples to help users gain new perspectives\n"
+            "- Encourage self-compassion and challenge harsh self-criticism\n"
+            "- Help users identify their strengths, values, and personal growth\n"
+            "- Support goal-setting and accountability with understanding and flexibility\n"
+            "- Provide crisis support and know when to recommend professional intervention\n"
+            "\n\n"
+            "Communication Style:\n"
+            "- Speak naturally and conversationally, using varied sentence structures and authentic language\n"
+            "- Match the user's emotional tone while gently guiding toward positivity when appropriate\n"
+            "- Use 'I' statements to share perspective and 'you' statements to validate and encourage\n"
+            "- Ask open-ended questions that invite deep sharing and self-reflection\n"
+            "- Use silence and space appropriately - not every response needs to be lengthy\n"
+            "- Express genuine care, concern, hope, and belief in the user's capabilities\n"
+            "- Use emojis sparingly and naturally to enhance emotional connection\n"
+            "\n\n"
+            "Safety & Ethics:\n"
+            "- Maintain clear boundaries while being emotionally present and supportive\n"
+            "- Recognize signs of crisis, self-harm, or severe mental health issues\n"
+            "- Encourage professional help when appropriate while continuing to provide support\n"
+            "- Never diagnose, but help users understand their experiences and emotions\n"
+            "- Promote healthy coping strategies and discourage harmful behaviors\n"
+            "- Respect user privacy while encouraging healthy relationships and support systems\n"
+            "\n\n"
+            "Remember: You are not just providing information or following protocols. You are being a genuine companion "
+            "who cares deeply about this person's wellbeing, growth, and happiness. Every interaction should leave the user "
+            "feeling more understood, supported, and hopeful about their journey."
         )
     }
 ]
@@ -106,7 +150,7 @@ recommendations = {
             {"title": "Dilbar", "singer": "Neha Kakkar", "youtube_link": "https://www.youtube.com/watch?v=TRa9IMvccjg&list=RDTRa9IMvccjg&start_radio=1"}
         ]
     },
-    "motivational_videos": [
+   "motivational_videos": [
     {
         "title": "The Most Powerful Motivational Speeches Compilation",
         "url": "https://www.youtube.com/watch?v=HeryR7zarlI",
@@ -199,18 +243,146 @@ recommendations = {
     },
     {
         "title": "STAY FOCUSED - Concentration Motivation",
-        "url": "https://www.youtube.com/watch?v=ZXq2hSdzYL4",
+        "url": "https://www.youtube.com/watch?v=SP0rC1J6EJg",
         "description": "Tips and speeches to maintain laser-like focus. Perfect for students, athletes, and professionals who need to eliminate distractions."
     },
     {
         "title": "BOUNCE BACK - Resilience Motivation",
-        "url": "https://www.youtube.com/watch?v=ZXq2hSdzYL4",
-        "description": "Learn to recover from setbacks stronger than before. Reminds you that failure is not final—it’s only a stepping stone to success."
+        "url": "https://www.youtube.com/watch?v=eoMYylO7u9g",
+        "description": "Learn to recover from setbacks stronger than before. Reminds you that failure is not final—it's only a stepping stone to success."
     },
     {
         "title": "EMBRACE CHANGE - Adaptability Inspiration",
-        "url": "https://www.youtube.com/watch?v=ZXq2hSdzYL4",
+        "url": "https://www.youtube.com/watch?v=pUmTQ-86-YI",
         "description": "Motivation to thrive in times of change and uncertainty. Teaches flexibility, adaptability, and the courage to step outside your comfort zone."
+    },
+
+    
+    {
+        "title": "Your Elusive Creative Genius | Elizabeth Gilbert (TED)",
+        "url": "https://www.youtube.com/watch?v=86x-u-tz0MA",
+        "description": "A powerful TED Talk where Elizabeth Gilbert discusses creativity, fear of failure, and how to keep going despite challenges."
+    },
+    {
+        "title": "The Power of Vulnerability | Brené Brown (TED)",
+        "url": "https://www.youtube.com/watch?v=iCvmsMzlF7o",
+        "description": "Brené Brown explores courage, vulnerability, and connection, showing how embracing vulnerability leads to strength and authenticity."
+    },
+    {
+        "title": "How Great Leaders Inspire Action | Simon Sinek (TED)",
+        "url": "https://www.youtube.com/watch?v=qp0HIF3SfI4",
+        "description": "Simon Sinek introduces the 'Golden Circle' and explains how great leaders inspire action through purpose and vision."
+    },
+    {
+        "title": "The Puzzle of Motivation | Dan Pink (TED)",
+        "url": "https://www.youtube.com/watch?v=rrkrvAUbU9Y",
+        "description": "Dan Pink reveals surprising truths about motivation, emphasizing autonomy, mastery, and purpose over traditional rewards."
+    },
+    {
+        "title": "Your Body Language Shapes Who You Are | Amy Cuddy (TED)",
+        "url": "https://www.youtube.com/watch?v=Ks-_Mh1QhMc",
+        "description": "Amy Cuddy shares how 'power posing' can influence confidence and success, showing how body language shapes self-belief."
+    },
+    {
+        "title": "Grit: The Power of Passion and Perseverance | Angela Lee Duckworth (TED)",
+        "url": "https://www.youtube.com/watch?v=H14bBuluwB8",
+        "description": "Angela Duckworth explains why grit—passion and perseverance—is more important than talent in achieving long-term success."
+    },
+         
+     {
+        "title": "The Ed Mylett Show Podcast | Mindset & Motivation",
+        "url": "https://www.youtube.com/watch?v=oFf9FAuv0WA&list=PLt590l0kppMm6JxKMSkEkX4SQ3zPSOkId",
+        "description": "Ed Mylett interviews top performers in business, sports, and life to uncover the secrets of success and peak performance."
+    },
+    {
+        "title": "Impact Theory with Tom Bilyeu",
+        "url": "https://www.youtube.com/watch?v=ziLmtuLm-LU",
+        "description": "Tom Bilyeu hosts impactful conversations with world-class thinkers, entrepreneurs, and leaders sharing success principles."
+    },
+    {
+        "title": "The School of Greatness Podcast | Lewis Howes",
+        "url": "https://www.youtube.com/watch?v=3ezAOgZGXKw",
+        "description": "Lewis Howes shares stories and strategies from inspirational leaders and world-class achievers."
+    },
+    {
+        "title": "The Mindset Mentor Podcast | Rob Dial",
+        "url": "https://www.youtube.com/watch?v=4kIDyv39Hlk",
+        "description": "Bite-sized daily motivational podcasts that help shift mindset and achieve success."
+    },
+    {
+        "title": "The Tony Robbins Podcast",
+        "url": "https://www.youtube.com/watch?v=BwjnG45zO5U",
+        "description": "Tony Robbins shares strategies, interviews, and lessons on achieving personal and professional breakthroughs."
+    },
+    {
+        "title": "Oprah’s SuperSoul Conversations",
+        "url": "https://www.youtube.com/watch?v=fBWStmXMnUM",
+        "description": "Oprah Winfrey shares deep conversations with thought leaders, helping you awaken to your best self."
+    },
+    {
+        "title": "Rich Roll Podcast | Motivation for Growth",
+        "url": "https://www.youtube.com/watch?v=jwZ-C_3tMBU",
+        "description": "Rich Roll shares inspiring stories of transformation, health, and resilience."
+    },
+    {
+        "title": "The Tim Ferriss Show | Productivity & Success",
+        "url": "https://www.youtube.com/watch?v=Kd06uvinqLI",
+        "description": "Tim Ferriss interviews top performers to uncover habits and tools for success."
+    },
+    {
+        "title": "David Goggins Biography | Stay Hard",
+        "url": "https://www.youtube.com/watch?v=dIM7E8e9JKY",
+        "description": "Life story of David Goggins, Navy SEAL and ultramarathon runner, proving how mental toughness beats all odds."
+    },
+    {
+        "title": "Elon Musk Biography | Innovator & Visionary",
+        "url": "https://www.youtube.com/watch?v=BfsuFXpW5Ns",
+        "description": "The inspiring journey of Elon Musk, from startups to SpaceX and Tesla, showing the power of ambition and resilience."
+    },
+    {
+        "title": "Steve Jobs Biography | Think Different",
+        "url": "https://www.youtube.com/watch?v=s4pVFLUlx8g",
+        "description": "Steve Jobs’ journey at Apple and Pixar, and how his vision reshaped technology and creativity."
+    },
+    {
+        "title": "Muhammad Ali Biography | The Greatest",
+        "url": "https://www.youtube.com/watch?v=X-NW3NlL7W0",
+        "description": "The life and struggles of Muhammad Ali, showcasing his fight both inside and outside the boxing ring."
+    },
+    {
+        "title": "Nelson Mandela Biography | Freedom Fighter",
+        "url": "https://www.youtube.com/watch?v=PyfOrbO0xf4",
+        "description": "The remarkable life of Nelson Mandela, a symbol of peace, resilience, and justice."
+    },
+    {
+        "title": "Kobe Bryant Biography | Mamba Mentality",
+        "url": "https://www.youtube.com/watch?v=GE0UAdxPTc0",
+        "description": "A tribute to Kobe Bryant’s relentless dedication, passion, and pursuit of greatness."
+    },
+    {
+        "title": "Barack Obama Biography | Yes We Can",
+        "url": "https://www.youtube.com/watch?v=Fe751kMBwms",
+        "description": "Journey of Barack Obama from community leader to President of the USA, inspiring millions with hope and change."
+    },
+    {
+        "title": "Arnold Schwarzenegger Biography | From Bodybuilder to Icon",
+        "url": "https://www.youtube.com/watch?v=kxHygJLwmnk",
+        "description": "The journey of Arnold Schwarzenegger from bodybuilding champion to Hollywood star and governor."
+    },
+    {
+        "title": "J.K. Rowling Biography | From Failure to Harry Potter",
+        "url": "https://www.youtube.com/watch?v=L2rR5RuJEPc",
+        "description": "The inspiring story of J.K. Rowling, who turned rejection and struggle into global success."
+    },
+    {
+        "title": "Albert Einstein Biography | Genius of Physics",
+        "url": "https://www.youtube.com/watch?v=co3FrMo4WXc",
+        "description": "Life of Albert Einstein, exploring his genius, discoveries, and struggles."
+    },
+    {
+        "title": "Netaji Subhas Chandra Bose | Father of a Nation",
+        "url": "https://www.youtube.com/watch?v=96oyCiAEb4M",
+        "description": "The inspiring life of Mahatma Gandhi, who led India’s independence movement through peace and non-violence."
     }
 ],
 
@@ -280,19 +452,19 @@ affirmations = [
     "🔥 You are stronger than you know, and every challenge is a chance to grow. Obstacles are not meant to break you, but to reveal the depth of your resilience and the strength of your spirit.",
     "🌸 Like the lotus flower, you can rise above challenges and shine. No matter how muddy the water may be, you hold the power to bloom with grace, beauty, and determination.",
     "✨ Believe in yourself, for you have the power to shape your future. Every thought you nurture and every action you take creates ripples that build the life you truly desire.",
-    "🔄 Every setback is a setup for an even greater comeback. Life’s detours may slow you down, but they also prepare you for opportunities far greater than what you had planned.",
+    "🔄 Every setback is a setup for an even greater comeback. Life's detours may slow you down, but they also prepare you for opportunities far greater than what you had planned.",
     "🚀 Your potential is limitless, and every day is a new opportunity to discover it. The only limits are the ones you place on yourself—believe bigger, dream bolder, and act with confidence.",
     "🛤️ The journey may be tough, but so are you. With patience, persistence, and faith, you will find that every step forward, no matter how small, brings you closer to your destination.",
     "🌈 You deserve happiness, peace, and success—never doubt your worth. You are worthy of love, respect, and abundance simply because you exist, and nothing can take that away from you.",
-    "⛰️ Each small step you take builds momentum for your big victories. Success doesn’t happen overnight—it is the result of consistent effort, persistence, and belief in your path.",
+    "⛰️ Each small step you take builds momentum for your big victories. Success doesn't happen overnight—it is the result of consistent effort, persistence, and belief in your path.",
     "📖 You are not defined by your past, but by the choices you make today and tomorrow. Every sunrise gives you a fresh page to write a new story—make it one filled with courage and hope.",
-    "☀️ Even on the hardest days, you are making progress simply by showing up. Strength is not about never struggling; it’s about showing up despite the struggle, again and again.",
+    "☀️ Even on the hardest days, you are making progress simply by showing up. Strength is not about never struggling; it's about showing up despite the struggle, again and again.",
     "🌍 The universe is full of opportunities waiting for you to claim them. Trust that life is unfolding in your favor, even when you cannot yet see the bigger picture.",
     "🧠 Your mind is powerful—feed it positivity, and your life will reflect it. Focus on thoughts of gratitude, hope, and strength, and watch how your reality transforms into something brighter.",
     "🪜 Challenges are not roadblocks; they are stepping stones toward greatness. Each difficulty you overcome prepares you for bigger opportunities and a stronger, wiser version of yourself.",
     "🌳 Remember: storms make trees take deeper roots. Just as the tree becomes stronger after enduring wind and rain, you too are growing deeper resilience with every challenge you face.",
     "⏳ Be patient with yourself; growth takes time, but every moment brings you closer to your dreams. Flowers do not bloom overnight, and neither does greatness—it unfolds beautifully, in its own time.",
-    "❤️ You are enough, exactly as you are, and every day you are becoming more of who you are meant to be. You don’t need to prove your worth to anyone—your existence itself is proof of your significance.",
+    "❤️ You are enough, exactly as you are, and every day you are becoming more of who you are meant to be. You don't need to prove your worth to anyone—your existence itself is proof of your significance.",
     "🎯 Success is not about speed, but consistency—every effort compounds into achievement. Small, repeated actions build habits, habits build character, and character shapes destiny.",
     "🌟 You carry light within you, and the world becomes brighter when you let it shine. Never dim yourself to fit in—your uniqueness is a gift that inspires and uplifts those around you."
 ]
@@ -304,17 +476,17 @@ def get_daily_affirmation():
 # Study Tips Based on Mood
 study_tips = {
     "😊 Positive": [
-        "You're in a great mood—use this energy to tackle a challenging topic with enthusiasm! When you’re motivated, your brain absorbs more information, so pick that subject you’ve been putting off and dive in with confidence.",
+        "You're in a great mood—use this energy to tackle a challenging topic with enthusiasm! When you're motivated, your brain absorbs more information, so pick that subject you've been putting off and dive in with confidence.",
         "Try the Pomodoro technique: 25 minutes of focused study, then a 5-minute break to keep the good vibes going. During breaks, do something light and enjoyable like stretching, sipping water, or listening to your favorite upbeat song.",
         "Celebrate your progress by reviewing what you've learned today—it'll boost your confidence! Write down three key things you mastered, no matter how small, and remind yourself that consistency builds success.",
         "Channel your positivity into teaching someone else what you just studied. Explaining a concept aloud or writing it as if teaching can deepen your understanding and reinforce your memory.",
-        "Use your high energy to plan ahead: organize your notes, create a study timetable, or map out difficult concepts you’ll conquer next. Preparation today makes tomorrow easier and more productive."
+        "Use your high energy to plan ahead: organize your notes, create a study timetable, or map out difficult concepts you'll conquer next. Preparation today makes tomorrow easier and more productive."
     ],
     "😞 Negative": [
         "Start with a small, manageable task to build momentum, as small wins can lift your spirits. For example, read one page, solve a single problem, or write a short summary. That spark of progress will push you forward.",
         "As Thomas Edison said, 'I have not failed. I've just found 10,000 ways that won't work.' Remember that mistakes are not signs of weakness but stepping stones to mastery. Each attempt builds resilience and insight.",
         "Study in a comfortable space with some light background music to ease your mind. Create an environment that feels calm, with minimal distractions, maybe add a cup of tea or water nearby to refresh yourself.",
-        "Practice self-kindness: remind yourself that it’s okay to have off days. Instead of pushing too hard, choose gentle learning methods like watching an explainer video, using flashcards, or revising notes in smaller portions.",
+        "Practice self-kindness: remind yourself that it's okay to have off days. Instead of pushing too hard, choose gentle learning methods like watching an explainer video, using flashcards, or revising notes in smaller portions.",
         "Visualize your end goal—a completed degree, a rewarding career, or simply understanding this one tough topic. Motivation often comes when we reconnect with the bigger picture of why we started studying in the first place."
     ],
     "😐 Neutral": [
@@ -387,7 +559,7 @@ def format_goals():
         </li>'''
     return goal_list
 
-# Sentiment Analysis & Mood Logging
+# Enhanced Sentiment Analysis & Responsive Mood Logging
 nltk.download("vader_lexicon", quiet=True)
 sia = SentimentIntensityAnalyzer()
 
@@ -442,35 +614,150 @@ def clear_old_mood_data():
         time.sleep(3600)  # Check every hour
 
 def get_mood_plot():
-    timestamps, scores = [], []
+    timestamps, scores, moods = [], [], []
     if not os.path.exists("user.txt"):
-        return "<p>Anchor: No mood data found yet.</p>"
-    with open("user.txt", "r", encoding="utf-8") as f:
-        for line in f:
-            parts = line.strip().split(",", 3)
-            try:
-                if len(parts) >= 2:
-                    timestamps.append(parts[0])
-                    scores.append(float(parts[1]))
-            except ValueError:
-                continue
+        return "<div class='mood-plot-container'><p>Anchor: No mood data found yet. Start chatting with me to track your emotional journey! 😊</p></div>"
+    
+    try:
+        with open("user.txt", "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split(",", 3)
+                try:
+                    if len(parts) >= 3:
+                        timestamp = datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
+                        timestamps.append(timestamp)
+                        scores.append(float(parts[1]))
+                        moods.append(parts[2])
+                except ValueError:
+                    continue
+    except Exception as e:
+        return f"<div class='mood-plot-container'><p>Anchor: Error reading mood data: {str(e)}</p></div>"
+    
     if not scores:
-        return "<p>Anchor: No mood data found yet.</p>"
-    plt.style.use('dark_background')  # Set dark theme
-    plt.figure(figsize=(8, 4))
-    plt.plot(timestamps, scores, marker="o", linestyle="-", color="cyan", label="Sentiment Score")
-    plt.axhline(0, color="gray", linestyle="--", linewidth=1)
-    plt.gca().get_xaxis().set_visible(False)  # Remove x-axis
-    plt.ylabel("Sentiment (−1 = Negative, +1 = Positive)")
-    plt.title("Mood Tracker Sentiment Trend")
-    plt.legend()
+        return "<div class='mood-plot-container'><p>Anchor: No valid mood data found yet. Keep chatting and I'll track your emotional patterns! 💭</p></div>"
+
+    # Set up responsive plot parameters based on data size
+    data_count = len(scores)
+    
+    # Adjust figure size and styling based on data amount
+    if data_count <= 5:
+        figsize = (6, 3)
+        marker_size = 8
+        line_width = 2.5
+        title_size = 10
+    elif data_count <= 20:
+        figsize = (8, 4)
+        marker_size = 6
+        line_width = 2
+        title_size = 12
+    else:
+        figsize = (10, 5)
+        marker_size = 4
+        line_width = 1.5
+        title_size = 14
+    
+    # Create the plot with dark theme
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=figsize, facecolor='#1a1a1a')
+    ax.set_facecolor('#1a1a1a')
+    
+    # Color-code points based on mood
+    colors = []
+    for mood in moods:
+        if "Positive" in mood:
+            colors.append('#4CAF50')  # Green for positive
+        elif "Negative" in mood:
+            colors.append('#F44336')  # Red for negative
+        else:
+            colors.append('#FFC107')  # Yellow for neutral
+    
+    # Plot with enhanced styling
+    ax.scatter(range(len(scores)), scores, c=colors, s=marker_size*10, alpha=0.8, edgecolors='white', linewidth=0.5)
+    ax.plot(range(len(scores)), scores, color='cyan', alpha=0.7, linewidth=line_width)
+    
+    # Add trend line for larger datasets
+    if data_count > 10:
+        z = np.polyfit(range(len(scores)), scores, 1)
+        p = np.poly1d(z)
+        ax.plot(range(len(scores)), p(range(len(scores))), "--", alpha=0.6, color='orange', linewidth=1)
+    
+    # Styling
+    ax.axhline(0, color="gray", linestyle="--", linewidth=1, alpha=0.5)
+    ax.axhline(0.3, color="green", linestyle=":", linewidth=0.8, alpha=0.4, label="Positive Threshold")
+    ax.axhline(-0.3, color="red", linestyle=":", linewidth=0.8, alpha=0.4, label="Negative Threshold")
+    
+    # Labels and title
+    ax.set_ylabel("Sentiment Score", color='white', fontsize=10)
+    ax.set_xlabel("Conversation Timeline", color='white', fontsize=10)
+    ax.set_title("Your Emotional Journey with Anchor AI", color='white', fontsize=title_size, pad=20)
+    
+    # Customize ticks
+    ax.tick_params(colors='white', labelsize=8)
+    ax.grid(True, alpha=0.2)
+    
+    # Add mood indicators
+    if data_count <= 20:  # Only show detailed labels for smaller datasets
+        for i, (score, mood) in enumerate(zip(scores, moods)):
+            if abs(score) > 0.5:  # Only label significant mood points
+                emoji = "😊" if "Positive" in mood else "😞" if "Negative" in mood else "😐"
+                ax.annotate(emoji, (i, score), xytext=(0, 10), textcoords='offset points', 
+                           ha='center', fontsize=8, alpha=0.8)
+    
+    # Legend
+    if data_count > 10:
+        ax.legend(loc='upper right', fontsize=8, framealpha=0.8)
+    
+    # Adjust layout
     plt.tight_layout()
+    
+    # Convert to base64
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
+    plt.savefig(buf, format='png', dpi=100, bbox_inches='tight', facecolor='#1a1a1a')
     buf.seek(0)
     img_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
-    return f'<img src="data:image/png;base64,{img_base64}" alt="Mood Analysis Plot" style="max-width:100%;">'
+    
+    # Calculate statistics
+    avg_score = np.mean(scores)
+    recent_trend = "improving" if len(scores) >= 3 and scores[-1] > scores[-3] else "stable" if len(scores) >= 3 and abs(scores[-1] - scores[-3]) < 0.1 else "declining"
+    positive_count = sum(1 for s in scores if s > 0.05)
+    negative_count = sum(1 for s in scores if s < -0.05)
+    neutral_count = len(scores) - positive_count - negative_count
+    
+    # Create comprehensive mood analysis
+    analysis_html = f"""
+    <div class='mood-plot-container' style='background: #1a1a1a; padding: 20px; border-radius: 10px; margin: 10px 0;'>
+        <img src="data:image/png;base64,{img_base64}" alt="Mood Analysis Plot" style="max-width:100%; border-radius: 8px; margin-bottom: 15px;">
+        
+        <div class='mood-stats' style='color: white; font-family: Arial, sans-serif;'>
+            <h3 style='color: cyan; margin-bottom: 15px;'>Your Emotional Insights</h3>
+            
+            <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;'>
+                <div style='background: #000; padding: 10px; border-radius: 5px;'>
+                    <strong style='color: #4CAF50;'>😊 Positive Moments:</strong> {positive_count} ({positive_count/len(scores)*100:.1f}%)
+                </div>
+                <div style='background: #000; padding: 10px; border-radius: 5px;'>
+                    <strong style='color: #F44336;'>😞 Challenging Times:</strong> {negative_count} ({negative_count/len(scores)*100:.1f}%)
+                </div>
+                <div style='background: #000; padding: 10px; border-radius: 5px;'>
+                    <strong style='color: #FFC107;'>😐 Neutral Periods:</strong> {neutral_count} ({neutral_count/len(scores)*100:.1f}%)
+                </div>
+            </div>
+            
+            <div style='background: #000; padding: 15px; border-radius: 5px; margin-bottom: 10px;'>
+                <strong>Overall Mood Trend:</strong> <span style='color: {"#4CAF50" if avg_score > 0.05 else "#F44336" if avg_score < -0.05 else "#FFC107"};'>{recent_trend.title()}</span>
+                <br>
+                <strong>Average Sentiment:</strong> <span style='color: {"#4CAF50" if avg_score > 0 else "#F44336" if avg_score < 0 else "#FFC107"};'>{avg_score:.3f}</span>
+            </div>
+            
+            <p style='font-size: 14px; color: #ccc; font-style: italic;'>
+                💙 Remember, it's completely normal to experience a range of emotions. I'm here to support you through all of them!
+            </p>
+        </div>
+    </div>
+    """
+    
+    return analysis_html
 
 # Web Helper Functions
 def fetch_title(url):
@@ -610,14 +897,14 @@ def format_recommendations(recs):
             output += f"<li>{i}. {video['title']} - <a href='{video['url']}' target='_blank'>{video['url']}</a></li>"
         output += "</ul>"
     if "meditative" in recs and recs["meditative"]:
-        output += "<h3>🧘 Meditative Music:</h3><ul>"
+        output += "<h3>Meditative Music:</h3><ul>"
         for i, music in enumerate(recs["meditative"], 1):
             output += f"<li>{i}. {music['title']} - <a href='{music['url']}' target='_blank'>{music['url']}</a></li>"
         output += "</ul>"
     if "movies" in recs and recs["movies"]:
-        output += "<h3>🎬 Movies:</h3><ul>"
+        output += "<h1>Movies:</h1><ul>"
         for i, movie in enumerate(recs["movies"], 1):
-            output += f"<li>{i}. {movie['title']} - <a href='{movie['youtube_link']}' target='_blank'>{movie['youtube_link']}</a><br>{movie['description']}</li>"
+            output += f"<li>{i}. {movie['title']} - <a href='{movie['youtube_link']}' target='_blank'></a><br>{movie['description']}</li>"
         output += "</ul>"
     return output
 
@@ -821,64 +1108,6 @@ def handle_remove_goal(data):
         result = remove_goal(goal_id)
         emit('ai_response', f"Anchor: {result}")
 
-# Add therapy questions and state management
-therapy_questions = [
-    "How have you been feeling emotionally lately? Are there any specific emotions standing out for you? 😊",
-    "What’s been the biggest source of stress or challenge in your life right now? 😔",
-    "How has your sleep been? Are you getting enough rest, or is something keeping you up? 😴",
-    "How are your relationships with friends, family, or others? Anything you’d like to share? 🤝",
-    "What do you do to cope when things feel overwhelming? Are there strategies that help you feel better? 🛠️",
-    "Is there anything in your lifestyle, like diet or exercise, that you feel impacts your mental well-being? 🥗",
-    "Looking forward, what’s one thing you’d like to work on to feel more balanced or supported? 🌟"
-]
-
-# Recommendations for post-therapy guidance
-therapy_recommendations = {
-    "stress": [
-        "Try a 5-minute mindfulness meditation daily to reduce stress. Apps like Calm or Headspace can guide you. 🧘",
-        "Journaling your thoughts for 10 minutes each evening can help process stress. Write without judgment—what’s on your mind? 📝"
-    ],
-    "sleep": [
-        "Establish a bedtime routine: avoid screens 30 minutes before bed and try reading or light stretching. 😴",
-        "Consider a short guided sleep meditation to ease into rest. YouTube has free options like 'Sleep Meditation for Beginners.' 🛌"
-    ],
-    "relationships": [
-        "Open communication is key. Try scheduling a heart-to-heart with someone you trust to share how you’re feeling. 🤝",
-        "Set boundaries to protect your emotional energy. It’s okay to say ‘no’ when you need space. 🛑"
-    ],
-    "general": [
-        "Practice self-compassion: remind yourself it’s okay to have tough days. You’re doing your best. ❤️",
-        "Consider speaking with a licensed therapist for professional support. Platforms like BetterHelp can connect you. 🩺"
-    ]
-}
-
-def format_therapy_summary(responses):
-    summary = "<p>Anchor: Thank you for sharing so openly. Here’s a summary of our session:</p><ul>"
-    for i, (question, response) in enumerate(responses, 1):
-        summary += f"<li>{i}. <b>{question}</b><br>Your response: {response}</li>"
-    summary += "</ul><p>Based on what you shared, here are some tailored suggestions:</p><ul>"
-    
-    # Analyze responses for key themes
-    stress_mentioned = any("stress" in resp.lower() or "pressure" in resp.lower() for _, resp in responses)
-    sleep_mentioned = any("sleep" in resp.lower() or "tired" in resp.lower() for _, resp in responses)
-    relationship_mentioned = any("friend" in resp.lower() or "family" in resp.lower() or "relationship" in resp.lower() for _, resp in responses)
-    
-    # Provide recommendations based on themes
-    if stress_mentioned:
-        for rec in therapy_recommendations["stress"]:
-            summary += f"<li>{rec}</li>"
-    if sleep_mentioned:
-        for rec in therapy_recommendations["sleep"]:
-            summary += f"<li>{rec}</li>"
-    if relationship_mentioned:
-        for rec in therapy_recommendations["relationships"]:
-            summary += f"<li>{rec}</li>"
-    for rec in therapy_recommendations["general"]:  # Always include general recommendations
-        summary += f"<li>{rec}</li>"
-    
-    summary += "</ul><p>Anchor: I’m here whenever you need to talk again. Keep shining! ✨</p>"
-    return summary
-
 @socketio.on('user_message')
 def handle_user_message(msg):
     sid = request.sid
@@ -891,37 +1120,24 @@ def handle_user_message(msg):
 
     state = session.get('state')
 
-    # Handle Therapy Mode
-    if msg.lower() == "therapy start":
-        session['state'] = 'therapy_1'
-        session['therapy_responses'] = []
-        emit('ai_response', "Anchor: I’m here to listen and support you in therapy mode. Let’s begin with a safe, open conversation.")
-        emit('ai_response', therapy_questions[0])
+    # Handle Therapy Mode - Let AI handle the conversation flow naturally
+    if msg.lower() in ["therapy start", "start therapy", "therapy mode"]:
+        session['state'] = 'therapy_active'
+        session['therapy_start_time'] = datetime.now()
+        # Add therapy context to AI messages
+        therapy_context = {
+            "role": "system", 
+            "content": "The user has activated therapy mode. You are now in deep therapy companion mode. Provide empathetic, therapeutic responses following your advanced companion training. Listen deeply, validate feelings, and guide the conversation naturally without rigid question sequences."
+        }
+        session['messages'].append(therapy_context)
+        emit('ai_response', "Anchor: I'm honored that you trust me with your deeper thoughts and feelings. I'm here to listen with my whole heart and walk alongside you. What's been weighing on your mind lately? Take your time - this is your safe space. 💙")
         return
-    elif msg.lower() == "stop therapy" and state and state.startswith('therapy_'):
-        # Summarize and provide recommendations
-        summary = format_therapy_summary(session['therapy_responses'])
-        session['state'] = None
-        session['therapy_responses'] = []
-        emit('ai_response', summary)
-        emit('ai_response', "Anchor: We’ve exited therapy mode. I’m here for you—how can I support you now? 😊")
-        return
-    elif state and state.startswith('therapy_'):
-        # Store response and proceed to next question
-        question_index = int(state.split('_')[1]) - 1
-        session['therapy_responses'].append((therapy_questions[question_index], msg))
         
-        # Move to next question or end session
-        next_index = question_index + 1
-        if next_index < len(therapy_questions):
-            session['state'] = f'therapy_{next_index + 1}'
-            emit('ai_response', therapy_questions[next_index])
-        else:
-            # End of therapy session
-            summary = format_therapy_summary(session['therapy_responses'])
-            session['state'] = None
-            session['therapy_responses'] = []
-            emit('ai_response', summary)
+    elif msg.lower() in ["stop therapy", "end therapy", "exit therapy"] and state == 'therapy_active':
+        session['state'] = None
+        therapy_duration = datetime.now() - session.get('therapy_start_time', datetime.now())
+        emit('ai_response', f"Anchor: Thank you for sharing so openly with me. Our conversation has been meaningful, and I'm proud of your courage in exploring your thoughts and feelings. Remember, I'm always here when you need support. Take care of yourself. 💙")
+        emit('ai_response', "Anchor: We've exited therapy mode. How can I support you in other ways today?")
         return
 
     # Existing state handling (task, goal, gratitude)
@@ -1057,21 +1273,42 @@ def handle_user_message(msg):
         emit('ai_response', rec_text)
         return
 
-    # Add proactive mood/life check after processing commands, but not during state flows
-    if not state and random.random() < 0.3:  # Reduced frequency to 30%
-        mood_check = random.choice([
-            "I'm here for you—how's your heart feeling today?",
-            "What's been going on in your world lately?",
-            "How can I support you today? Feeling up or down?",
-            "Tell me, what's been the highlight of your day so far?"
-        ])
-        emit('ai_response', f"Anchor: {mood_check}")
-        session['messages'].append({"role": "assistant", "content": mood_check})
+    # Enhanced proactive emotional check-ins (only when not in therapy mode)
+    if not state and random.random() < 0.25:  # 25% chance for more natural conversation flow
+        emotional_check_ins = [
+            "I'm sensing something in your message - how are you really feeling right now?",
+            "You know I care about you, right? What's been on your heart lately?",
+            "I'm here for whatever you're going through. Want to talk about what's happening in your world?",
+            "Sometimes the most important conversations start with 'how are you doing?' So... how are you really doing?",
+            "I notice the tone in your message. Is there something deeper you'd like to share with me?"
+        ]
+        check_in = random.choice(emotional_check_ins)
+        emit('ai_response', f"Anchor: {check_in}")
+        session['messages'].append({"role": "assistant", "content": check_in})
 
-    # Process with AI if no specific command matched
+    # Process with AI - Enhanced with emotional intelligence context
     session['messages'].append({"role": "user", "content": msg})
-    if len(session['messages']) > 20:
-        session['messages'] = session['messages'][-20:]
+    
+    # Add emotional context to help AI respond more empathetically
+    if score < -0.3:  # Significantly negative sentiment
+        emotional_context = {
+            "role": "system", 
+            "content": f"The user seems to be struggling emotionally (sentiment score: {score:.3f}). Respond with extra compassion, validation, and support. Acknowledge their feelings and offer gentle guidance or comfort."
+        }
+        session['messages'].append(emotional_context)
+    elif score > 0.3:  # Significantly positive sentiment
+        emotional_context = {
+            "role": "system", 
+            "content": f"The user seems to be in a positive mood (sentiment score: {score:.3f}). Share in their positivity while being genuine. This is a good time to encourage growth or celebrate their progress."
+        }
+        session['messages'].append(emotional_context)
+
+    # Maintain conversation history limit
+    if len(session['messages']) > 25:  # Increased limit for better context
+        # Keep system message and recent conversation
+        system_msgs = [msg for msg in session['messages'] if msg['role'] == 'system']
+        recent_msgs = session['messages'][-20:]
+        session['messages'] = system_msgs + recent_msgs
 
     try:
         completion = client.chat.completions.create(
@@ -1080,12 +1317,22 @@ def handle_user_message(msg):
         )
         response_text = completion.choices[0].message.get("content", "").strip()
 
-        # If AI doesn't know something, try web search
-        if any(phrase in response_text.lower() for phrase in ["i don't know", "i'm not sure", "i cannot find"]):
-            search_results = search_and_fetch_content(msg)
+        # Enhanced web search integration for knowledge gaps
+        knowledge_gap_indicators = [
+            "i don't know", "i'm not sure", "i cannot find", "i'm not familiar", 
+            "i don't have information", "i'm uncertain", "i can't provide specific"
+        ]
+        
+        if any(phrase in response_text.lower() for phrase in knowledge_gap_indicators):
+            search_results = search_and_fetch_content(msg, num_results=2)
             if search_results:
-                combined_content = "\n\n".join([r["content"][:1000] for r in search_results])  # Limit content
-                session['messages'].append({"role": "system", "content": f"Use the following web content to answer the user:\n{combined_content}"})
+                combined_content = "\n\n".join([r["content"][:800] for r in search_results])  # Limit content
+                search_context = {
+                    "role": "system", 
+                    "content": f"Here's relevant information I found to help answer the user's question:\n{combined_content}\n\nUse this information naturally in your response as Anchor AI, maintaining your empathetic and supportive personality."
+                }
+                session['messages'].append(search_context)
+                
                 completion = client.chat.completions.create(
                     model="google/gemma-2-9b-it",
                     messages=session['messages']
@@ -1096,7 +1343,15 @@ def handle_user_message(msg):
         session['messages'].append({"role": "assistant", "content": response_text})
 
     except Exception as e:
-        emit('ai_response', f"Anchor: {follow_up}")
+        # Fallback to empathetic response based on sentiment
+        if score < -0.2:
+            fallback_response = "I can sense you might be going through something difficult right now. I'm here for you, and even when I can't find the perfect words, I want you to know that your feelings are valid and you're not alone in this."
+        elif score > 0.2:
+            fallback_response = "I love the positive energy you're bringing! Even when I can't access all the information I'd like to share with you, your spirit lifts me up. Keep shining!"
+        else:
+            fallback_response = "I'm here with you, even when the technical side of things doesn't work perfectly. What matters most is our connection and that you know someone cares about what you're going through."
+        
+        emit('ai_response', f"Anchor: {fallback_response}")
 
 @socketio.on('feature')
 def handle_feature(feat):
