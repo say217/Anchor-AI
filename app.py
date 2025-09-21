@@ -1,4 +1,6 @@
 import nltk
+import os
+import matplotlib
 from nltk.sentiment import SentimentIntensityAnalyzer
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -10,12 +12,20 @@ import json
 import io
 import base64
 import copy
-import os
 from flask import Flask, render_template, session, request, jsonify, redirect, url_for
 from flask_socketio import SocketIO, emit
 import numpy as np
 import time
-import eventlet
+
+# Set NLTK and Matplotlib to use /tmp for writable storage
+os.environ['NLTK_DATA'] = '/tmp/nltk_data'
+os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
+nltk.data.path.append('/tmp/nltk_data')
+matplotlib.rcParams['savefig.directory'] = '/tmp'
+
+# Download vader_lexicon to /tmp/nltk_data
+nltk.download("vader_lexicon", download_dir='/tmp/nltk_data', quiet=True)
+
 # Initialize Hugging Face client
 HF_TOKEN = os.getenv('HF_TOKEN')
 client = InferenceClient(token=HF_TOKEN)
@@ -49,6 +59,7 @@ def save_goals():
     with open("/tmp/goals.json", "w") as f:
         json.dump(goals_to_save, f)
 
+# Initial messages for AI (unchanged)
 # Initial messages for AI
 initial_messages = [
     {
@@ -494,26 +505,21 @@ study_tips = {
         "Switch up your study method to spark engagement—if you usually read, try recording yourself explaining the topic, or quiz yourself with flashcards. A slight change in routine can reignite focus."
     ]
 }
+
 def get_study_tips(mood):
     return random.sample(study_tips[mood], min(2, len(study_tips[mood])))
 
-# Breathing Exercise
+# Breathing Exercise (modified for Vercel)
 def breathing_exercise(sid):
-    socketio.emit('ai_response', "Anchor: Let's do a quick breathing exercise.", room=sid)
-    socketio.emit('ai_response', "Inhale for 4 seconds, hold for 4, exhale for 4. Repeat 3 times.", room=sid)
-    socketio.emit('ai_response', "1. Inhale... Hold... Exhale...", room=sid)
-    socketio.sleep(12)
-    socketio.emit('ai_response', "2. Inhale... Hold... Exhale...", room=sid)
-    socketio.sleep(12)
-    socketio.emit('ai_response', "3. Inhale... Hold... Exhale...", room=sid)
-    socketio.sleep(12)
-    socketio.emit('ai_response', "Anchor: Great job! Feel calmer? Ready to continue?", room=sid)
+    emit('ai_response', "Anchor: Let's do a quick breathing exercise.", room=sid)
+    emit('ai_response', "Inhale for 4 seconds, hold for 4, exhale for 4. Repeat 3 times on your own.", room=sid)
+    emit('ai_response', "Anchor: Great job! Feel calmer? Ready to continue?", room=sid)
 
 # Gratitude Prompt
 def start_gratitude_prompt(sid):
     session['state'] = 'gratitude1'
-    socketio.emit('ai_response', "Anchor: Let's reflect on gratitude. Name three things you're thankful for today.", room=sid)
-    socketio.emit('ai_response', "1. ", room=sid)
+    emit('ai_response', "Anchor: Let's reflect on gratitude. Name three things you're thankful for today.", room=sid)
+    emit('ai_response', "1. ", room=sid)
 
 # Goal Tracker
 def set_goal(goal_name, goal_date):
@@ -521,11 +527,11 @@ def set_goal(goal_name, goal_date):
         goal_datetime = datetime.strptime(goal_date, "%Y-%m-%d")
         if len(goals) >= 10:
             goals.pop(0)
-            socketio.emit('ai_response', "Anchor: Goal limit reached. Removed oldest goal.")
+            emit('ai_response', "Anchor: Goal limit reached. Removed oldest goal.")
         goal_id = str(int(time.time() * 1000))
         goals.append((goal_name, goal_datetime, goal_id))
         save_goals()
-        socketio.emit('update_goals', format_goals())
+        emit('update_goals', format_goals())
         return f"Anchor: Goal '{goal_name}' set for {goal_datetime.strftime('%Y-%m-%d')}."
     except ValueError:
         return "Anchor: Invalid date format. Use YYYY-MM-DD."
@@ -534,7 +540,7 @@ def remove_goal(goal_id):
     global goals
     goals = [goal for goal in goals if goal[2] != goal_id]
     save_goals()
-    socketio.emit('update_goals', format_goals())
+    emit('update_goals', format_goals())
     return "Goal removed successfully!"
 
 def format_goals():
@@ -554,7 +560,6 @@ def format_goals():
     return goal_list
 
 # Sentiment Analysis & Mood Logging
-nltk.download("vader_lexicon", quiet=True)
 sia = SentimentIntensityAnalyzer()
 
 def log_mood(user_text):
@@ -830,11 +835,11 @@ def add_task(task_name, task_time, task_date):
         task_datetime = datetime.strptime(f"{task_date} {task_time}", "%Y-%m-%d %H:%M")
         if len(tasks) >= 10:
             tasks.pop(0)
-            socketio.emit('ai_response', "Anchor: Task limit reached. Removed oldest task.")
+            emit('ai_response', "Anchor: Task limit reached. Removed oldest task.")
         task_id = str(int(time.time() * 1000))
         tasks.append((task_name, task_datetime, task_id))
         save_tasks()
-        socketio.emit('update_tasks', format_tasks())
+        emit('update_tasks', format_tasks())
         return f"Task '{task_name}' scheduled for {task_datetime.strftime('%Y-%m-%d %H:%M')}"
     except ValueError:
         return "Anchor: Invalid date/time format. Use YYYY-MM-DD for date and HH:MM for time."
@@ -843,7 +848,7 @@ def remove_task(task_id):
     global tasks
     tasks = [task for task in tasks if task[2] != task_id]
     save_tasks()
-    socketio.emit('update_tasks', format_tasks())
+    emit('update_tasks', format_tasks())
     return "Task removed successfully!"
 
 def format_tasks():
@@ -862,28 +867,22 @@ def format_tasks():
         </li>'''
     return task_list
 
-# Flask App
-app = Flask(__name__)
-app.secret_key = 'super_secret_key'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
-
-load_data()
-
 # Cron Endpoints for Background Tasks
 @app.route('/cron/check_tasks')
 def cron_check_tasks():
+    load_data()
     now = datetime.now()
     tasks_to_remove = []
     for task_name, task_time, task_id in tasks[:]:
         time_diff = (task_time - now).total_seconds()
         if time_diff <= 0:
-            socketio.emit('popup_notification', {
+            emit('popup_notification', {
                 'type': 'task', 'title': 'Task Reminder',
                 'message': f"It's time for: {task_name}", 'icon': 'fas fa-tasks'
             })
             tasks_to_remove.append((task_name, task_time, task_id))
         elif time_diff <= 3600:
-            socketio.emit('popup_notification', {
+            emit('popup_notification', {
                 'type': 'task', 'title': 'Task Reminder',
                 'message': f"Reminder: '{task_name}' is due in less than an hour!",
                 'icon': 'fas fa-clock'
@@ -895,19 +894,20 @@ def cron_check_tasks():
 
 @app.route('/cron/check_goals')
 def cron_check_goals():
+    load_data()
     now = datetime.now()
     goals_to_remove = []
     for goal_name, goal_time, goal_id in goals[:]:
         time_diff = (goal_time - now).total_seconds()
         if time_diff <= 0:
-            socketio.emit('popup_notification', {
+            emit('popup_notification', {
                 'type': 'goal', 'title': 'Goal Deadline',
                 'message': f"Deadline reached for goal: {goal_name}",
                 'icon': 'fas fa-flag-checkered'
             })
             goals_to_remove.append((goal_name, goal_time, goal_id))
         elif time_diff <= 24 * 3600:
-            socketio.emit('popup_notification', {
+            emit('popup_notification', {
                 'type': 'goal', 'title': 'Goal Reminder',
                 'message': f"Reminder: Goal '{goal_name}' is due tomorrow!",
                 'icon': 'fas fa-exclamation-triangle'
@@ -951,7 +951,7 @@ def get_preview(url):
 
 # Flask App
 app = Flask(__name__)
-app.secret_key = 'super_secret_key'
+app.secret_key = os.getenv('SECRET_KEY', 'super_secret_key')
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 load_data()
@@ -1230,4 +1230,5 @@ def handle_feature(feat):
         emit('ai_response', book_text)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
