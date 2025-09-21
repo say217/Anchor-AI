@@ -27,13 +27,13 @@ goals = []
 def load_data():
     global tasks, goals
     try:
-        with open("tasks.json", "r") as f:
+        with open("/tmp/tasks.json", "r") as f:
             tasks = json.load(f)
             tasks = [(task[0], datetime.fromisoformat(task[1]), task[2]) for task in tasks]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         tasks = []
     try:
-        with open("goals.json", "r") as f:
+        with open("/tmp/goals.json", "r") as f:
             goals = json.load(f)
             goals = [(goal[0], datetime.fromisoformat(goal[1]), goal[2]) for goal in goals]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
@@ -41,12 +41,12 @@ def load_data():
 
 def save_tasks():
     tasks_to_save = [(task[0], task[1].isoformat(), task[2]) for task in tasks]
-    with open("tasks.json", "w") as f:
+    with open("/tmp/tasks.json", "w") as f:
         json.dump(tasks_to_save, f)
 
 def save_goals():
     goals_to_save = [(goal[0], goal[1].isoformat(), goal[2]) for goal in goals]
-    with open("goals.json", "w") as f:
+    with open("/tmp/goals.json", "w") as f:
         json.dump(goals_to_save, f)
 
 # Initial messages for AI
