@@ -24,18 +24,16 @@ client = InferenceClient(token=HF_TOKEN)
 tasks = []
 goals = []
 
-data_dir = os.getenv('DATA_DIR', '/tmp')  # Use /data on Fly.io
-
 def load_data():
     global tasks, goals
     try:
-        with open(os.path.join(data_dir, "tasks.json"), "r") as f:
+        with open("tasks.json", "r") as f:
             tasks = json.load(f)
             tasks = [(task[0], datetime.fromisoformat(task[1]), task[2]) for task in tasks]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         tasks = []
     try:
-        with open(os.path.join(data_dir, "goals.json"), "r") as f:
+        with open("goals.json", "r") as f:
             goals = json.load(f)
             goals = [(goal[0], datetime.fromisoformat(goal[1]), goal[2]) for goal in goals]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
@@ -43,12 +41,12 @@ def load_data():
 
 def save_tasks():
     tasks_to_save = [(task[0], task[1].isoformat(), task[2]) for task in tasks]
-    with open(os.path.join(data_dir, "tasks.json"), "w") as f:
+    with open("tasks.json", "w") as f:
         json.dump(tasks_to_save, f)
 
 def save_goals():
     goals_to_save = [(goal[0], goal[1].isoformat(), goal[2]) for goal in goals]
-    with open(os.path.join(data_dir, "goals.json"), "w") as f:
+    with open("goals.json", "w") as f:
         json.dump(goals_to_save, f)
 
 # Initial messages for AI
@@ -582,17 +580,17 @@ def log_mood(user_text):
         ])
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = f"{now},{compound_score},{mood},{user_text}\n"
-    with open(os.path.join(data_dir, "user.txt"), "a", encoding="utf-8") as f:
+    with open("/tmp/user.txt", "a", encoding="utf-8") as f:
         f.write(entry)
     return now, mood, compound_score, follow_up
 
 def get_mood_plot():
     timestamps, scores, moods = [], [], []
-    if not os.path.exists(os.path.join(data_dir, "user.txt")):
+    if not os.path.exists("/tmp/user.txt"):
         return "<div class='mood-plot-container'><p>Anchor: No mood data found yet. Start chatting to track your emotions!</p></div>"
     
     try:
-        with open(os.path.join(data_dir, "user.txt"), "r", encoding="utf-8") as f:
+        with open("/tmp/user.txt", "r", encoding="utf-8") as f:
             for line in f:
                 parts = line.strip().split(",", 3)
                 if len(parts) >= 3:
@@ -871,16 +869,8 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 load_data()
 
-# Background checker
-def background_checker():
-    while True:
-        cron_check_tasks()
-        cron_check_goals()
-        cron_clear_mood()
-        time.sleep(60)  # Check every minute
-
-socketio.start_background_task(background_checker)
-
+# Cron Endpoints for Background Tasks
+@app.route('/cron/check_tasks')
 def cron_check_tasks():
     now = datetime.now()
     tasks_to_remove = []
@@ -901,7 +891,9 @@ def cron_check_tasks():
     for task in tasks_to_remove:
         tasks.remove(task)
     save_tasks()
+    return jsonify({'status': 'success'})
 
+@app.route('/cron/check_goals')
 def cron_check_goals():
     now = datetime.now()
     goals_to_remove = []
@@ -923,21 +915,24 @@ def cron_check_goals():
     for goal in goals_to_remove:
         goals.remove(goal)
     save_goals()
+    return jsonify({'status': 'success'})
 
+@app.route('/cron/clear_mood')
 def cron_clear_mood():
-    if os.path.exists(os.path.join(data_dir, "user.txt")):
+    if os.path.exists("/tmp/user.txt"):
         try:
-            with open(os.path.join(data_dir, "user.txt"), "r", encoding="utf-8") as f:
+            with open("/tmp/user.txt", "r", encoding="utf-8") as f:
                 lines = f.readlines()
             now = datetime.now()
             valid_lines = [
                 line for line in lines
                 if (now - datetime.strptime(line.split(",", 1)[0], "%Y-%m-%d %H:%M:%S")).total_seconds() <= 48 * 3600
             ]
-            with open(os.path.join(data_dir, "user.txt"), "w", encoding="utf-8") as f:
+            with open("/tmp/user.txt", "w", encoding="utf-8") as f:
                 f.writelines(valid_lines)
         except Exception:
             pass
+    return jsonify({'status': 'success'})
 
 # Preview Function
 def get_preview(url):
@@ -953,6 +948,13 @@ def get_preview(url):
         return {'title': title, 'desc': desc, 'image': img}
     except Exception:
         return {'title': url, 'desc': '', 'image': ''}
+
+# Flask App
+app = Flask(__name__)
+app.secret_key = 'super_secret_key'
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
+load_data()
 
 @app.route('/')
 def welcome():
@@ -991,21 +993,6 @@ def remove_task_route(task_id):
 def remove_goal_route(goal_id):
     result = remove_goal(goal_id)
     return jsonify({'status': 'success', 'message': result})
-
-@app.route('/cron/check_tasks')
-def cron_check_tasks_route():
-    cron_check_tasks()
-    return jsonify({'status': 'success'})
-
-@app.route('/cron/check_goals')
-def cron_check_goals_route():
-    cron_check_goals()
-    return jsonify({'status': 'success'})
-
-@app.route('/cron/clear_mood')
-def cron_clear_mood_route():
-    cron_clear_mood()
-    return jsonify({'status': 'success'})
 
 @socketio.on('connect')
 def handle_connect():
@@ -1091,7 +1078,7 @@ def handle_user_message(msg):
     elif state == 'gratitude3':
         gratitude3 = msg
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(os.path.join(data_dir, "gratitude.txt"), "a", encoding="utf-8") as f:
+        with open("/tmp/gratitude.txt", "a", encoding="utf-8") as f:
             f.write(f"{now},{session['temp_gratitude1']},{session['temp_gratitude2']},{gratitude3}\n")
         emit('ai_response', "Anchor: Beautiful reflections! Keep shining!")
         session['state'] = None
@@ -1241,4 +1228,6 @@ def handle_feature(feat):
         books = get_book_recommendations(mood)
         book_text = format_book_recommendations(books)
         emit('ai_response', book_text)
- 
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
