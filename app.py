@@ -1,6 +1,4 @@
 import nltk
-import os
-import matplotlib
 from nltk.sentiment import SentimentIntensityAnalyzer
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -12,20 +10,12 @@ import json
 import io
 import base64
 import copy
+import os
 from flask import Flask, render_template, session, request, jsonify, redirect, url_for
 from flask_socketio import SocketIO, emit
 import numpy as np
 import time
-
-# Set NLTK and Matplotlib to use /tmp for writable storage
-os.environ['NLTK_DATA'] = '/tmp/nltk_data'
-os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib'
-nltk.data.path.append('/tmp/nltk_data')
-matplotlib.rcParams['savefig.directory'] = '/tmp'
-
-# Download vader_lexicon to /tmp/nltk_data
-nltk.download("vader_lexicon", download_dir='/tmp/nltk_data', quiet=True)
-
+import eventlet
 # Initialize Hugging Face client
 HF_TOKEN = os.getenv('HF_TOKEN')
 client = InferenceClient(token=HF_TOKEN)
@@ -34,16 +24,18 @@ client = InferenceClient(token=HF_TOKEN)
 tasks = []
 goals = []
 
+data_dir = os.getenv('DATA_DIR', '/tmp')  # Use /data on Fly.io
+
 def load_data():
     global tasks, goals
     try:
-        with open("/tmp/tasks.json", "r") as f:
+        with open(os.path.join(data_dir, "tasks.json"), "r") as f:
             tasks = json.load(f)
             tasks = [(task[0], datetime.fromisoformat(task[1]), task[2]) for task in tasks]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
         tasks = []
     try:
-        with open("/tmp/goals.json", "r") as f:
+        with open(os.path.join(data_dir, "goals.json"), "r") as f:
             goals = json.load(f)
             goals = [(goal[0], datetime.fromisoformat(goal[1]), goal[2]) for goal in goals]
     except (FileNotFoundError, json.JSONDecodeError, ValueError):
@@ -51,15 +43,14 @@ def load_data():
 
 def save_tasks():
     tasks_to_save = [(task[0], task[1].isoformat(), task[2]) for task in tasks]
-    with open("/tmp/tasks.json", "w") as f:
+    with open(os.path.join(data_dir, "tasks.json"), "w") as f:
         json.dump(tasks_to_save, f)
 
 def save_goals():
     goals_to_save = [(goal[0], goal[1].isoformat(), goal[2]) for goal in goals]
-    with open("/tmp/goals.json", "w") as f:
+    with open(os.path.join(data_dir, "goals.json"), "w") as f:
         json.dump(goals_to_save, f)
 
-# Initial messages for AI (unchanged)
 # Initial messages for AI
 initial_messages = [
     {
@@ -505,21 +496,26 @@ study_tips = {
         "Switch up your study method to spark engagement—if you usually read, try recording yourself explaining the topic, or quiz yourself with flashcards. A slight change in routine can reignite focus."
     ]
 }
-
 def get_study_tips(mood):
     return random.sample(study_tips[mood], min(2, len(study_tips[mood])))
 
-# Breathing Exercise (modified for Vercel)
+# Breathing Exercise
 def breathing_exercise(sid):
-    emit('ai_response', "Anchor: Let's do a quick breathing exercise.", room=sid)
-    emit('ai_response', "Inhale for 4 seconds, hold for 4, exhale for 4. Repeat 3 times on your own.", room=sid)
-    emit('ai_response', "Anchor: Great job! Feel calmer? Ready to continue?", room=sid)
+    socketio.emit('ai_response', "Anchor: Let's do a quick breathing exercise.", room=sid)
+    socketio.emit('ai_response', "Inhale for 4 seconds, hold for 4, exhale for 4. Repeat 3 times.", room=sid)
+    socketio.emit('ai_response', "1. Inhale... Hold... Exhale...", room=sid)
+    socketio.sleep(12)
+    socketio.emit('ai_response', "2. Inhale... Hold... Exhale...", room=sid)
+    socketio.sleep(12)
+    socketio.emit('ai_response', "3. Inhale... Hold... Exhale...", room=sid)
+    socketio.sleep(12)
+    socketio.emit('ai_response', "Anchor: Great job! Feel calmer? Ready to continue?", room=sid)
 
 # Gratitude Prompt
 def start_gratitude_prompt(sid):
     session['state'] = 'gratitude1'
-    emit('ai_response', "Anchor: Let's reflect on gratitude. Name three things you're thankful for today.", room=sid)
-    emit('ai_response', "1. ", room=sid)
+    socketio.emit('ai_response', "Anchor: Let's reflect on gratitude. Name three things you're thankful for today.", room=sid)
+    socketio.emit('ai_response', "1. ", room=sid)
 
 # Goal Tracker
 def set_goal(goal_name, goal_date):
@@ -527,11 +523,11 @@ def set_goal(goal_name, goal_date):
         goal_datetime = datetime.strptime(goal_date, "%Y-%m-%d")
         if len(goals) >= 10:
             goals.pop(0)
-            emit('ai_response', "Anchor: Goal limit reached. Removed oldest goal.")
+            socketio.emit('ai_response', "Anchor: Goal limit reached. Removed oldest goal.")
         goal_id = str(int(time.time() * 1000))
         goals.append((goal_name, goal_datetime, goal_id))
         save_goals()
-        emit('update_goals', format_goals())
+        socketio.emit('update_goals', format_goals())
         return f"Anchor: Goal '{goal_name}' set for {goal_datetime.strftime('%Y-%m-%d')}."
     except ValueError:
         return "Anchor: Invalid date format. Use YYYY-MM-DD."
@@ -540,7 +536,7 @@ def remove_goal(goal_id):
     global goals
     goals = [goal for goal in goals if goal[2] != goal_id]
     save_goals()
-    emit('update_goals', format_goals())
+    socketio.emit('update_goals', format_goals())
     return "Goal removed successfully!"
 
 def format_goals():
@@ -560,6 +556,7 @@ def format_goals():
     return goal_list
 
 # Sentiment Analysis & Mood Logging
+nltk.download("vader_lexicon", quiet=True)
 sia = SentimentIntensityAnalyzer()
 
 def log_mood(user_text):
@@ -585,17 +582,17 @@ def log_mood(user_text):
         ])
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = f"{now},{compound_score},{mood},{user_text}\n"
-    with open("/tmp/user.txt", "a", encoding="utf-8") as f:
+    with open(os.path.join(data_dir, "user.txt"), "a", encoding="utf-8") as f:
         f.write(entry)
     return now, mood, compound_score, follow_up
 
 def get_mood_plot():
     timestamps, scores, moods = [], [], []
-    if not os.path.exists("/tmp/user.txt"):
+    if not os.path.exists(os.path.join(data_dir, "user.txt")):
         return "<div class='mood-plot-container'><p>Anchor: No mood data found yet. Start chatting to track your emotions!</p></div>"
     
     try:
-        with open("/tmp/user.txt", "r", encoding="utf-8") as f:
+        with open(os.path.join(data_dir, "user.txt"), "r", encoding="utf-8") as f:
             for line in f:
                 parts = line.strip().split(",", 3)
                 if len(parts) >= 3:
@@ -835,11 +832,11 @@ def add_task(task_name, task_time, task_date):
         task_datetime = datetime.strptime(f"{task_date} {task_time}", "%Y-%m-%d %H:%M")
         if len(tasks) >= 10:
             tasks.pop(0)
-            emit('ai_response', "Anchor: Task limit reached. Removed oldest task.")
+            socketio.emit('ai_response', "Anchor: Task limit reached. Removed oldest task.")
         task_id = str(int(time.time() * 1000))
         tasks.append((task_name, task_datetime, task_id))
         save_tasks()
-        emit('update_tasks', format_tasks())
+        socketio.emit('update_tasks', format_tasks())
         return f"Task '{task_name}' scheduled for {task_datetime.strftime('%Y-%m-%d %H:%M')}"
     except ValueError:
         return "Anchor: Invalid date/time format. Use YYYY-MM-DD for date and HH:MM for time."
@@ -848,7 +845,7 @@ def remove_task(task_id):
     global tasks
     tasks = [task for task in tasks if task[2] != task_id]
     save_tasks()
-    emit('update_tasks', format_tasks())
+    socketio.emit('update_tasks', format_tasks())
     return "Task removed successfully!"
 
 def format_tasks():
@@ -867,22 +864,36 @@ def format_tasks():
         </li>'''
     return task_list
 
-# Cron Endpoints for Background Tasks
-@app.route('/cron/check_tasks')
+# Flask App
+app = Flask(__name__)
+app.secret_key = 'super_secret_key'
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+
+load_data()
+
+# Background checker
+def background_checker():
+    while True:
+        cron_check_tasks()
+        cron_check_goals()
+        cron_clear_mood()
+        time.sleep(60)  # Check every minute
+
+socketio.start_background_task(background_checker)
+
 def cron_check_tasks():
-    load_data()
     now = datetime.now()
     tasks_to_remove = []
     for task_name, task_time, task_id in tasks[:]:
         time_diff = (task_time - now).total_seconds()
         if time_diff <= 0:
-            emit('popup_notification', {
+            socketio.emit('popup_notification', {
                 'type': 'task', 'title': 'Task Reminder',
                 'message': f"It's time for: {task_name}", 'icon': 'fas fa-tasks'
             })
             tasks_to_remove.append((task_name, task_time, task_id))
         elif time_diff <= 3600:
-            emit('popup_notification', {
+            socketio.emit('popup_notification', {
                 'type': 'task', 'title': 'Task Reminder',
                 'message': f"Reminder: '{task_name}' is due in less than an hour!",
                 'icon': 'fas fa-clock'
@@ -890,24 +901,21 @@ def cron_check_tasks():
     for task in tasks_to_remove:
         tasks.remove(task)
     save_tasks()
-    return jsonify({'status': 'success'})
 
-@app.route('/cron/check_goals')
 def cron_check_goals():
-    load_data()
     now = datetime.now()
     goals_to_remove = []
     for goal_name, goal_time, goal_id in goals[:]:
         time_diff = (goal_time - now).total_seconds()
         if time_diff <= 0:
-            emit('popup_notification', {
+            socketio.emit('popup_notification', {
                 'type': 'goal', 'title': 'Goal Deadline',
                 'message': f"Deadline reached for goal: {goal_name}",
                 'icon': 'fas fa-flag-checkered'
             })
             goals_to_remove.append((goal_name, goal_time, goal_id))
         elif time_diff <= 24 * 3600:
-            emit('popup_notification', {
+            socketio.emit('popup_notification', {
                 'type': 'goal', 'title': 'Goal Reminder',
                 'message': f"Reminder: Goal '{goal_name}' is due tomorrow!",
                 'icon': 'fas fa-exclamation-triangle'
@@ -915,24 +923,21 @@ def cron_check_goals():
     for goal in goals_to_remove:
         goals.remove(goal)
     save_goals()
-    return jsonify({'status': 'success'})
 
-@app.route('/cron/clear_mood')
 def cron_clear_mood():
-    if os.path.exists("/tmp/user.txt"):
+    if os.path.exists(os.path.join(data_dir, "user.txt")):
         try:
-            with open("/tmp/user.txt", "r", encoding="utf-8") as f:
+            with open(os.path.join(data_dir, "user.txt"), "r", encoding="utf-8") as f:
                 lines = f.readlines()
             now = datetime.now()
             valid_lines = [
                 line for line in lines
                 if (now - datetime.strptime(line.split(",", 1)[0], "%Y-%m-%d %H:%M:%S")).total_seconds() <= 48 * 3600
             ]
-            with open("/tmp/user.txt", "w", encoding="utf-8") as f:
+            with open(os.path.join(data_dir, "user.txt"), "w", encoding="utf-8") as f:
                 f.writelines(valid_lines)
         except Exception:
             pass
-    return jsonify({'status': 'success'})
 
 # Preview Function
 def get_preview(url):
@@ -948,13 +953,6 @@ def get_preview(url):
         return {'title': title, 'desc': desc, 'image': img}
     except Exception:
         return {'title': url, 'desc': '', 'image': ''}
-
-# Flask App
-app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'super_secret_key')
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
-
-load_data()
 
 @app.route('/')
 def welcome():
@@ -993,6 +991,21 @@ def remove_task_route(task_id):
 def remove_goal_route(goal_id):
     result = remove_goal(goal_id)
     return jsonify({'status': 'success', 'message': result})
+
+@app.route('/cron/check_tasks')
+def cron_check_tasks_route():
+    cron_check_tasks()
+    return jsonify({'status': 'success'})
+
+@app.route('/cron/check_goals')
+def cron_check_goals_route():
+    cron_check_goals()
+    return jsonify({'status': 'success'})
+
+@app.route('/cron/clear_mood')
+def cron_clear_mood_route():
+    cron_clear_mood()
+    return jsonify({'status': 'success'})
 
 @socketio.on('connect')
 def handle_connect():
@@ -1078,7 +1091,7 @@ def handle_user_message(msg):
     elif state == 'gratitude3':
         gratitude3 = msg
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open("/tmp/gratitude.txt", "a", encoding="utf-8") as f:
+        with open(os.path.join(data_dir, "gratitude.txt"), "a", encoding="utf-8") as f:
             f.write(f"{now},{session['temp_gratitude1']},{session['temp_gratitude2']},{gratitude3}\n")
         emit('ai_response', "Anchor: Beautiful reflections! Keep shining!")
         session['state'] = None
@@ -1228,7 +1241,3 @@ def handle_feature(feat):
         books = get_book_recommendations(mood)
         book_text = format_book_recommendations(books)
         emit('ai_response', book_text)
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, host='0.0.0.0', port=port, debug=False)
