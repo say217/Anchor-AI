@@ -17,8 +17,7 @@
 
 Anchor AI is an empathetic, AI-powered mental health assistant designed specifically for students. It provides a safe and supportive space where users can check in on their mental well-being, manage tasks and goals, receive personalized recommendations, and engage in therapeutic conversations. With a strong focus on privacy, positivity, and accessibility, Anchor AI leverages natural language processing and real-time interactions to deliver encouragement, mood tracking, and practical tools for daily life management.
 
-**Important Disclaimer:** Anchor AI is not intended to replace professional mental health care. It serves only as a supportive, non-clinical tool. If you are experiencing a mental health crisis, please seek help from a licensed professional or emergency services. In the United States, you can call 988 to connect to the Suicide & Crisis Lifeline.
-
+**Important Disclaimer:** Anchor AI is not intended to replace professional mental health care. It serves only as a supportive, non-clinical tool. If you are experiencing a mental health crisis, please seek help from a licensed professional or emergency services.
 ## Project Structure
 
 The project is organized as follows:
@@ -30,6 +29,7 @@ anchor-ai/
 │   └── index.html        # Chat interface template
 ├── tasks.json            # Task storage (auto-generated)
 ├── goals.json            # Goal storage (auto-generated)
+|── last_reset.txt        #last reset data
 ├── user.txt              # Mood logs
 ├── gratitude.txt         # Gratitude entries
 |── vercel.json
@@ -42,7 +42,7 @@ Anchor AI offers a comprehensive set of features that address both student menta
 
 Alongside mental health features, Anchor AI includes productivity and goal management tools. The task scheduler allows users to add, view, and remove tasks with reminders sent an hour before and at the due time. A maximum of ten tasks are supported, with the oldest being removed if the limit is exceeded. Similarly, the goal tracker enables students to set deadlines and receive reminders both one day before and on the deadline itself, with a maximum of ten goals stored at a time. Study tips are also provided, tailored to the user’s mood, which can include strategies such as the Pomodoro technique or visualization exercises to improve learning efficiency.
 
-To personalize the user experience further, Anchor AI recommends resources such as books, songs, movies, and motivational videos that are aligned with the user’s mood. For example, students in a positive mood may receive recommendations such as "The Power of Positive Thinking." Summaries for books are obtained through web searches, while songs, videos, and movies include direct YouTube links. The system also integrates web search functionality, allowing students to append the word "search" to a query in order to retrieve and summarize top results via the Google Custom Search API.
+To personalize the user experience further, Anchor AI recommends resources such as **books, songs, movies, and motivational videos** that are aligned with the user’s mood. For example, students in a positive mood may receive recommendations such as "The Power of Positive Thinking." Summaries for books are obtained through web searches, while songs, videos, and movies include direct YouTube links. The system also integrates web search functionality, allowing students to append the word "search" to a query in order to retrieve and summarize top results via the Google Custom Search API.
 
 The technical design of Anchor AI prioritizes user experience. It provides real-time chat powered by Flask-SocketIO, ensuring interactive, websocket-based conversations. The AI responses are generated through Hugging Face’s InferenceClient with the Gemma-2-9b-it model, offering natural and empathetic replies. Task and goal reminders appear as popup notifications, while all user data such as moods, tasks, goals, and gratitude logs are stored in JSON or TXT files to ensure persistence. Shared URLs are previewed by fetching titles, descriptions, and images, and background threads handle periodic checks, reminders, and data cleanup tasks automatically.
 
@@ -150,6 +150,7 @@ graph TD
 
 ```
 
+
 ## Technologies Used
 
 | Technology | Description |
@@ -162,7 +163,6 @@ graph TD
 | Matplotlib | Data visualization for mood trend plots. |
 | Requests & BeautifulSoup | Web scraping and HTTP requests. |
 | Google Custom Search API | For web search integration. |
-| Geema LLM Model (Hugging Face) | Large language model for AI responses. |
 | HTML, CSS, JS, Tailwind CSS | For building the web user interface. |
 
 
@@ -199,6 +199,6 @@ Contributions to Anchor AI are welcome. To contribute, fork the repository and c
 
 ## Acknowledgments
 Anchor AI was built using open-source tools from Hugging Face, NLTK, Flask, and other contributors. It was inspired by the growing need for accessible and empathetic mental health support tailored to students.
-For questions or suggestions, please open an issue on the repository or contact the maintainer through their GitHub profile or provided email address.
+For questions or suggestions, please open an issue on the repository or contact us through our GitHub profile.
 
  
