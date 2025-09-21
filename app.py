@@ -1241,3 +1241,4 @@ def handle_feature(feat):
         books = get_book_recommendations(mood)
         book_text = format_book_recommendations(books)
         emit('ai_response', book_text)
+    # No need for a closing brace; Python uses indentation to define scope
