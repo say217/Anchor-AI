@@ -1191,7 +1191,7 @@ def handle_user_message(msg):
         plot_html = get_mood_plot()
         emit('ai_response', plot_html)
         return
-
+ 
     if "schedule my work" in msg.lower():
         session['state'] = 'waiting_task_name'
         emit('ai_response', "Anchor: Sure! Let's schedule your task.")
