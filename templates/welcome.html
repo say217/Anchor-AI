@@ -4,23 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anchor AI - Your Mental Health Companion</title>
-     <link rel="icon" href="https://img.freepik.com/premium-photo/black-background-with-pink-orange-logo_978914-26588.jpg" type="image/png">
+    <link rel="icon" href="https://img.freepik.com/premium-photo/black-background-with-pink-orange-logo_978914-26588.jpg" type="image/png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-primary: #000000;
-            --bg-secondary: #111111;
-            --bg-card: rgba(255, 255, 255, 0.05);
-            --text-primary: #ffffff;
-            --text-secondary: #cccccc;
-            --text-muted: #999999;
-            --accent-primary: #ffffff;
-            --accent-secondary: #aaaaaa;
-            --gradient-primary: linear-gradient(135deg, #ffffff 0%, #aaaaaa 100%);
-            --border-color: rgba(255, 255, 255, 0.3);
-            --shadow-glow: 0 0 20px rgba(255, 255, 255, 0.2);
-            --spotlight-color: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+            --bg-primary: #0a0e27;
+            --bg-secondary: #111829;
+            --bg-card: rgba(20, 30, 60, 0.4);
+            --text-primary: #f5f5f5;
+            --text-secondary: #b0b8d4;
+            --text-muted: #8892b0;
+            --accent-primary: #60a5fa;
+            --accent-secondary: #a78bfa;
+            --gradient-primary: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #ec4899 100%);
+            --gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --border-color: rgba(135, 206, 235, 0.15);
+            --shadow-glow: 0 0 30px rgba(96, 165, 250, 0.3);
+            --glass-bg: rgba(20, 30, 60, 0.6);
+            --glass-border: rgba(135, 206, 235, 0.2);
         }
         * {
             margin: 0;
@@ -28,12 +30,16 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Merriweather', serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            line-height: 1.8;
+            line-height: 1.6;
             overflow-x: hidden;
             font-weight: 300;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 500;
         }
         .spotlight-bg {
             position: fixed;
@@ -41,7 +47,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: var(--spotlight-color);
+            background: radial-gradient(circle at 50% 0%, rgba(96, 165, 250, 0.08) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -53,15 +59,16 @@
             z-index: 1;
         }
         .header {
-            padding: 1rem 0;
+            padding: 1.2rem 0;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(10, 14, 39, 0.95);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--glass-border);
             z-index: 100;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         .nav {
             display: flex;
@@ -179,9 +186,9 @@
             animation: fadeInUp 1.5s ease-out;
         }
         .hero h1 {
-            font-size: clamp(4rem, 6vw, 5rem);
-            font-weight: 350;
-            margin-bottom: 1.5rem;
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 500;
+            margin-bottom: 1rem;
             background: var(--gradient-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -189,16 +196,16 @@
             line-height: 1.2;
         }
         .hero-subtitle {
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--text-secondary);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             font-weight: 300;
-            margin-top:-20px;
+            margin-top: -10px;
         }
         .hero-description {
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
             max-width: 700px;
             margin-left: auto;
             margin-right: auto;
@@ -221,8 +228,8 @@
             align-items: center;
         }
         .about-text h2 {
-            font-size: 2.5rem;
-            font-weight: 400;
+            font-size: 2.2rem;
+            font-weight: 500;
             margin-bottom: 1.5rem;
             background: var(--gradient-primary);
             -webkit-background-clip: text;
@@ -230,7 +237,7 @@
             background-clip: text;
         }
         .about-text p {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: var(--text-secondary);
             margin-bottom: 1.5rem;
             font-weight: 300;
@@ -252,24 +259,19 @@
             gap: 1rem;
             padding: 2rem;
             width: 100%;
-            background-color: var(--bg-card);
-            background-image: radial-gradient(
-                at 88% 40%, var(--bg-secondary) 0px, transparent 85%
-            ),
-            radial-gradient(at 49% 30%, var(--bg-secondary) 0px, transparent 85%),
-            radial-gradient(at 14% 26%, var(--bg-secondary) 0px, transparent 85%),
-            radial-gradient(at 0% 64%, hsl(0, 0%, 20%) 0px, transparent 85%),
-            radial-gradient(at 41% 94%, hsl(0, 0%, 30%) 0px, transparent 85%),
-            radial-gradient(at 100% 99%, hsl(0, 0%, 10%) 0px, transparent 85%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
             border-radius: 1.5rem;
-            box-shadow: 0px -16px 24px 0px rgba(255, 255, 255, 0.1) inset;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
             overflow: hidden;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--glass-border);
         }
         .card:hover, .stat-item:hover, .feature-card:hover, .help-item:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
             box-shadow: var(--shadow-glow);
+            border-color: var(--accent-primary);
+            background: rgba(30, 41, 59, 0.8);
         }
         .card .card__border, .stat-item .card__border, .feature-card .card__border, .help-item .card__border {
             overflow: hidden;
@@ -331,8 +333,8 @@
             margin-bottom: 4rem;
         }
         .section-header h2 {
-            font-size: 2.5rem;
-            font-weight: 400;
+            font-size: 2.2rem;
+            font-weight: 500;
             margin-bottom: 1rem;
             background: var(--gradient-primary);
             -webkit-background-clip: text;
@@ -340,7 +342,7 @@
             background-clip: text;
         }
         .section-header p {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: var(--text-secondary);
             max-width: 700px;
             margin: 0 auto;
@@ -366,16 +368,16 @@
             color: var(--bg-primary);
         }
         .feature-card h3 {
-            font-size: 1.3rem;
-            font-weight: 400;
-            margin-bottom: 1rem;
+            font-size: 1.15rem;
+            font-weight: 500;
+            margin-bottom: 0.8rem;
             color: var(--text-primary);
         }
         .feature-card p {
             color: var(--text-secondary);
-            line-height: 1.7;
+            line-height: 1.6;
             font-weight: 300;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         .how-it-helps {
             padding: 8rem 0;
@@ -402,14 +404,14 @@
             font-size: 1.5rem;
         }
         .help-content h4 {
-            font-weight: 400;
+            font-weight: 500;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
-            font-size: 1.2rem;
+            font-size: 1.05rem;
         }
         .help-content p {
             color: var(--text-secondary);
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 300;
         }
         .cta-section {
@@ -422,13 +424,13 @@
             margin: 0 auto;
         }
         .cta-content h2 {
-            font-size: 2.5rem;
-            font-weight: 400;
+            font-size: 2.2rem;
+            font-weight: 500;
             margin-bottom: 1.5rem;
             color: var(--bg-primary);
         }
         .cta-content p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--bg-primary);
             margin-bottom: 2.5rem;
             font-weight: 300;
@@ -451,7 +453,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            font-size: 1.4rem;
+            font-size: 1.15rem;
         }
         .footer-section p,
         .footer-section a {
@@ -461,7 +463,7 @@
             display: block;
             font-weight: 300;
             transition: color 0.3s ease;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
         .footer-section a:hover {
             color: var(--accent-primary);
@@ -474,14 +476,22 @@
         .social-link {
             width: 45px;
             height: 45px;
-            background: var(--bg-card);
-            
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--text-secondary);
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .social-link:hover {
+            background: var(--glass-bg);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(96, 165, 250, 0.3);
         }
        
         .footer-bottom {
