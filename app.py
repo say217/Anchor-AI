@@ -5,7 +5,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup
-from huggingface_hub import InferenceClient
+import google.generativeai as genai
 import random
 import json
 import io 
@@ -17,10 +17,15 @@ from flask_socketio import SocketIO, emit
 import threading
 import time
 import numpy as np
+import urllib.parse
+from recomend import recommendations
 
-# Initialize Hugging Face client
-HF_TOKEN = os.getenv('HF_TOKEN')  # Replace with your token
-client = InferenceClient(token=HF_TOKEN)
+# Initialize Google Generative AI client
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')  # Set GOOGLE_API_KEY environment variable
+if not GOOGLE_API_KEY:
+    print("Warning: GOOGLE_API_KEY environment variable not set. Chat will not work without it.")
+else:
+    genai.configure(api_key=GOOGLE_API_KEY)
 
 # Global task and goal lists - persist to JSON
 tasks = []
@@ -132,388 +137,185 @@ initial_messages = [
     }
 ]
 
-# Predefined recommendation lists
-recommendations = {
-    "bollywood_songs": {
-        "happy_fun": [
-            {"title": "Badtameez Dil", "singer": "Benny Dayal, Shefali Alvares", "youtube_link": "https://www.youtube.com/watch?v=fVkRKY2PhTQ&list=RDfVkRKY2PhTQ&start_radio=1"},
-            {"title": "Gallan Goodiyaan", "singer": "Various Artists", "youtube_link": "https://www.youtube.com/watch?v=62cEYOeMBt0&list=RD62cEYOeMBt0&start_radio=1"},
-            {"title": "Kar Gayi Chull", "singer": "Badshah, Neha Kakkar", "youtube_link": "https://www.youtube.com/watch?v=iwlUeXLPvf0&list=RDiwlUeXLPvf0&start_radio=1"},
-            {"title": "London Thumakda", "singer": "Labh Janjua, Neha Kakkar", "youtube_link": "https://www.youtube.com/watch?v=udra3Mfw2oo&list=RDudra3Mfw2oo&start_radio=1"}
-        ],
-        "motivational": [
-            {"title": "Zinda", "singer": "Shankar Mahadevan", "youtube_link": "https://www.youtube.com/watch?v=Ax0G_P2dSBw&list=RDAx0G_P2dSBw&start_radio=1"},
-            {"title": "Lakshya", "singer": "Shankar Mahadevan", "youtube_link": "https://www.youtube.com/watch?v=8DMF0U6xV78&list=RD8DMF0U6xV78&start_radio=1"}
-        ],
-        "party": [
-            {"title": "Swag Se Swagat", "singer": "Vishal Dadlani, Neha Bhasin", "youtube_link": "https://www.youtube.com/watch?v=xmU0s2QtaEY&list=RDxmU0s2QtaEY&start_radio=1"},
-            {"title": "Aankh Marey", "singer": "Neha Kakkar, Mika Singh", "youtube_link": "https://www.youtube.com/watch?v=_KhQT-LGb-4&list=RD_KhQT-LGb-4&start_radio=1"},
-            {"title": "Dilbar", "singer": "Neha Kakkar", "youtube_link": "https://www.youtube.com/watch?v=TRa9IMvccjg&list=RDTRa9IMvccjg&start_radio=1"}
-        ]
-    },
-   "motivational_videos": [
-    {
-        "title": "The Most Powerful Motivational Speeches Compilation",
-        "url": "https://www.youtube.com/watch?v=HeryR7zarlI",
-        "description": "WATCH THIS EVERYDAY AND CHANGE YOUR LIFE - Denzel Washington Motivational Speech. Features life-changing talks from world leaders, athletes, and entrepreneurs, reminding you to embrace resilience, courage, and determination every single day."
-    },
-    {
-        "title": "GET UP AND GRIND - Best Motivational Speech Video",
-        "url": "https://www.youtube.com/watch?v=Z0TUYzjlzCk",
-        "description": "A powerful speech to motivate you to get up and work hard towards your goals. Packed with high-energy background music and quotes from top motivational speakers to push you into action."
-    },
-    {
-        "title": "BELIEVE IN YOURSELF - Motivational Video",
-        "url": "https://www.youtube.com/watch?v=8N38W0Nmp00",
-        "description": "Inspiring words to help you build self-confidence and achieve success. This video emphasizes the importance of trusting your inner potential and silencing self-doubt."
-    },
-    {
-        "title": "NEVER GIVE UP - Motivational Speech",
-        "url": "https://www.youtube.com/watch?v=JjvN_hYDp3g",
-        "description": "Encouragement to persevere through challenges and keep pushing forward. Highlights real-life success stories of people who refused to quit even in the hardest times."
-    },
-    {
-        "title": "RISE AND SHINE - Morning Motivation",
-        "url": "https://www.youtube.com/watch?v=jqQcP2nbzlA",
-        "description": "Start your day with positive energy and motivation to conquer the day. A perfect morning boost with inspiring music and quotes to build momentum."
-    },
-    {
-        "title": "DISCIPLINE IS KEY - Motivational Compilation",
-        "url": "https://www.youtube.com/watch?v=ft_DXwgUXB0",
-        "description": "Speeches emphasizing the importance of discipline in achieving greatness. This video shows why consistency and habits are more powerful than motivation alone."
-    },
-    {
-        "title": "OVERCOME FEAR - Powerful Motivation",
-        "url": "https://www.youtube.com/watch?v=P8-9mDn4nRM",
-        "description": "Learn how to conquer your fears and step into your power. It explains how fear limits growth and why courage is the first step toward success."
-    },
-    {
-        "title": "CHASE YOUR DREAMS - Inspirational Video",
-        "url": "https://www.youtube.com/watch?v=WsuCFbK4E_I",
-        "description": "Motivation to pursue your passions relentlessly. Encourages viewers to stop procrastinating and go all-in on their goals, no matter the obstacles."
-    },
-    {
-        "title": "BE UNSTOPPABLE - Motivational Speech",
-        "url": "https://www.youtube.com/watch?v=9iQbuvnlRmg",
-        "description": "Become unbreakable in the face of adversity. Designed to fuel your inner strength and keep you moving when life feels toughest."
-    },
-    {
-        "title": "SUCCESS MINDSET - Motivation for Winners",
-        "url": "https://www.youtube.com/watch?v=RkaCnfJZXT4",
-        "description": "Develop the mindset of a champion and attract success. This video reveals key habits and mental strategies used by world-class achievers."
-    },
-    {
-        "title": "PUSH THROUGH PAIN - Epic Motivational Video",
-        "url": "https://www.youtube.com/watch?v=pDMIjsl7gyo",
-        "description": "Turn your pain into power and keep moving forward. Includes powerful athlete and fighter stories that prove persistence beats struggle."
-    },
-    {
-        "title": "WAKE UP WITH PURPOSE - Daily Motivation",
-        "url": "https://www.youtube.com/watch?v=PGUdWfB8nLg",
-        "description": "Find your why and live each day with intention. A strong reminder that your morning mindset sets the tone for your entire life journey."
-    },
-    {
-        "title": "GRIT AND DETERMINATION - Motivational Speeches",
-        "url": "https://www.youtube.com/watch?v=AJ1-WE1B2Ss",
-        "description": "Build resilience and never back down from challenges. Packed with stories of individuals who fought through failure to achieve greatness."
-    },
-    {
-        "title": "TRANSFORM YOUR LIFE - Powerful Inspiration",
-        "url": "https://www.youtube.com/watch?v=v3qF74t0z6Y",
-        "description": "Steps to reinvent yourself and create the life you want. Shows how small mindset shifts can lead to massive transformations."
-    },
-    {
-        "title": "NO EXCUSES - Hard-Hitting Motivation",
-        "url": "https://www.youtube.com/watch?v=b6kI18ldfPE",
-        "description": "Eliminate excuses and take massive action. Delivers a wake-up call to break free from laziness, doubt, and distractions."
-    },
-    {
-        "title": "BECOME A LEADER - Leadership Motivation",
-        "url": "https://www.youtube.com/watch?v=vCIu7Ja_TE0",
-        "description": "Inspire others by becoming the best version of yourself. Encourages leadership through courage, responsibility, and influence."
-    },
-    {
-        "title": "FACE YOUR DEMONS - Inner Strength Video",
-        "url": "https://www.youtube.com/watch?v=eTqtiJK7WU8",
-        "description": "Confront inner struggles and emerge stronger. Talks about battling anxiety, failure, and self-doubt with courage and persistence."
-    },
-    {
-        "title": "ACHIEVE GREATNESS - Epic Speeches",
-        "url": "https://www.youtube.com/watch?v=X3J8J-ZF7iQ",
-        "description": "Motivation from legends to reach your full potential. Features a mix of celebrity and athlete speeches on never settling for less."
-    },
-    {
-        "title": "STAY FOCUSED - Concentration Motivation",
-        "url": "https://www.youtube.com/watch?v=SP0rC1J6EJg",
-        "description": "Tips and speeches to maintain laser-like focus. Perfect for students, athletes, and professionals who need to eliminate distractions."
-    },
-    {
-        "title": "BOUNCE BACK - Resilience Motivation",
-        "url": "https://www.youtube.com/watch?v=eoMYylO7u9g",
-        "description": "Learn to recover from setbacks stronger than before. Reminds you that failure is not final—it's only a stepping stone to success."
-    },
-    {
-        "title": "EMBRACE CHANGE - Adaptability Inspiration",
-        "url": "https://www.youtube.com/watch?v=pUmTQ-86-YI",
-        "description": "Motivation to thrive in times of change and uncertainty. Teaches flexibility, adaptability, and the courage to step outside your comfort zone."
-    },
 
-    
-    {
-        "title": "Your Elusive Creative Genius | Elizabeth Gilbert (TED)",
-        "url": "https://www.youtube.com/watch?v=86x-u-tz0MA",
-        "description": "A powerful TED Talk where Elizabeth Gilbert discusses creativity, fear of failure, and how to keep going despite challenges."
-    },
-    {
-        "title": "The Power of Vulnerability | Brené Brown (TED)",
-        "url": "https://www.youtube.com/watch?v=iCvmsMzlF7o",
-        "description": "Brené Brown explores courage, vulnerability, and connection, showing how embracing vulnerability leads to strength and authenticity."
-    },
-    {
-        "title": "How Great Leaders Inspire Action | Simon Sinek (TED)",
-        "url": "https://www.youtube.com/watch?v=qp0HIF3SfI4",
-        "description": "Simon Sinek introduces the 'Golden Circle' and explains how great leaders inspire action through purpose and vision."
-    },
-    {
-        "title": "The Puzzle of Motivation | Dan Pink (TED)",
-        "url": "https://www.youtube.com/watch?v=rrkrvAUbU9Y",
-        "description": "Dan Pink reveals surprising truths about motivation, emphasizing autonomy, mastery, and purpose over traditional rewards."
-    },
-    {
-        "title": "Your Body Language Shapes Who You Are | Amy Cuddy (TED)",
-        "url": "https://www.youtube.com/watch?v=Ks-_Mh1QhMc",
-        "description": "Amy Cuddy shares how 'power posing' can influence confidence and success, showing how body language shapes self-belief."
-    },
-    {
-        "title": "Grit: The Power of Passion and Perseverance | Angela Lee Duckworth (TED)",
-        "url": "https://www.youtube.com/watch?v=H14bBuluwB8",
-        "description": "Angela Duckworth explains why grit—passion and perseverance—is more important than talent in achieving long-term success."
-    },
-         
-     {
-        "title": "The Ed Mylett Show Podcast | Mindset & Motivation",
-        "url": "https://www.youtube.com/watch?v=oFf9FAuv0WA&list=PLt590l0kppMm6JxKMSkEkX4SQ3zPSOkId",
-        "description": "Ed Mylett interviews top performers in business, sports, and life to uncover the secrets of success and peak performance."
-    },
-    {
-        "title": "Impact Theory with Tom Bilyeu",
-        "url": "https://www.youtube.com/watch?v=ziLmtuLm-LU",
-        "description": "Tom Bilyeu hosts impactful conversations with world-class thinkers, entrepreneurs, and leaders sharing success principles."
-    },
-    {
-        "title": "The School of Greatness Podcast | Lewis Howes",
-        "url": "https://www.youtube.com/watch?v=3ezAOgZGXKw",
-        "description": "Lewis Howes shares stories and strategies from inspirational leaders and world-class achievers."
-    },
-    {
-        "title": "The Mindset Mentor Podcast | Rob Dial",
-        "url": "https://www.youtube.com/watch?v=4kIDyv39Hlk",
-        "description": "Bite-sized daily motivational podcasts that help shift mindset and achieve success."
-    },
-    {
-        "title": "The Tony Robbins Podcast",
-        "url": "https://www.youtube.com/watch?v=BwjnG45zO5U",
-        "description": "Tony Robbins shares strategies, interviews, and lessons on achieving personal and professional breakthroughs."
-    },
-    {
-        "title": "Oprah’s SuperSoul Conversations",
-        "url": "https://www.youtube.com/watch?v=fBWStmXMnUM",
-        "description": "Oprah Winfrey shares deep conversations with thought leaders, helping you awaken to your best self."
-    },
-    {
-        "title": "Rich Roll Podcast | Motivation for Growth",
-        "url": "https://www.youtube.com/watch?v=jwZ-C_3tMBU",
-        "description": "Rich Roll shares inspiring stories of transformation, health, and resilience."
-    },
-    {
-        "title": "The Tim Ferriss Show | Productivity & Success",
-        "url": "https://www.youtube.com/watch?v=Kd06uvinqLI",
-        "description": "Tim Ferriss interviews top performers to uncover habits and tools for success."
-    },
-    {
-        "title": "David Goggins Biography | Stay Hard",
-        "url": "https://www.youtube.com/watch?v=dIM7E8e9JKY",
-        "description": "Life story of David Goggins, Navy SEAL and ultramarathon runner, proving how mental toughness beats all odds."
-    },
-    {
-        "title": "Elon Musk Biography | Innovator & Visionary",
-        "url": "https://www.youtube.com/watch?v=BfsuFXpW5Ns",
-        "description": "The inspiring journey of Elon Musk, from startups to SpaceX and Tesla, showing the power of ambition and resilience."
-    },
-    {
-        "title": "Steve Jobs Biography | Think Different",
-        "url": "https://www.youtube.com/watch?v=s4pVFLUlx8g",
-        "description": "Steve Jobs’ journey at Apple and Pixar, and how his vision reshaped technology and creativity."
-    },
-    {
-        "title": "Muhammad Ali Biography | The Greatest",
-        "url": "https://www.youtube.com/watch?v=X-NW3NlL7W0",
-        "description": "The life and struggles of Muhammad Ali, showcasing his fight both inside and outside the boxing ring."
-    },
-    {
-        "title": "Nelson Mandela Biography | Freedom Fighter",
-        "url": "https://www.youtube.com/watch?v=PyfOrbO0xf4",
-        "description": "The remarkable life of Nelson Mandela, a symbol of peace, resilience, and justice."
-    },
-    {
-        "title": "Kobe Bryant Biography | Mamba Mentality",
-        "url": "https://www.youtube.com/watch?v=GE0UAdxPTc0",
-        "description": "A tribute to Kobe Bryant’s relentless dedication, passion, and pursuit of greatness."
-    },
-    {
-        "title": "Barack Obama Biography | Yes We Can",
-        "url": "https://www.youtube.com/watch?v=Fe751kMBwms",
-        "description": "Journey of Barack Obama from community leader to President of the USA, inspiring millions with hope and change."
-    },
-    {
-        "title": "Arnold Schwarzenegger Biography | From Bodybuilder to Icon",
-        "url": "https://www.youtube.com/watch?v=kxHygJLwmnk",
-        "description": "The journey of Arnold Schwarzenegger from bodybuilding champion to Hollywood star and governor."
-    },
-    {
-        "title": "J.K. Rowling Biography | From Failure to Harry Potter",
-        "url": "https://www.youtube.com/watch?v=L2rR5RuJEPc",
-        "description": "The inspiring story of J.K. Rowling, who turned rejection and struggle into global success."
-    },
-    {
-        "title": "Albert Einstein Biography | Genius of Physics",
-        "url": "https://www.youtube.com/watch?v=co3FrMo4WXc",
-        "description": "Life of Albert Einstein, exploring his genius, discoveries, and struggles."
-    },
-    {
-        "title": "Netaji Subhas Chandra Bose | Father of a Nation",
-        "url": "https://www.youtube.com/watch?v=96oyCiAEb4M",
-        "description": "The inspiring life of Mahatma Gandhi, who led India’s independence movement through peace and non-violence."
-    }
-],
+# ===== AI-POWERED FEATURE GENERATORS =====
+def generate_affirmation(mood_score):
+    """Generate personalized affirmation using Google Generative AI based on mood score."""
+    try:
+        mood_description = "positive and uplifted" if mood_score > 0 else "low and vulnerable"
+        prompt = f"""You are Anchor AI, a compassionate mental health companion. Generate a short, personalized, 
+        and deeply empathetic affirmation for a student who is feeling {mood_description} right now. 
+        The affirmation should:
+        - Be warm, genuine, and emotionally resonant
+        - Include specific validation of their current emotional state
+        - Empower them with hope and confidence
+        - Be 1-2 sentences maximum
+        - Use 'you' language to make it personal
+        
+        Respond ONLY with the affirmation, no extra text."""
+        
+        chat = genai.GenerativeModel('gemini-2.5-flash').start_chat()
+        response = chat.send_message(prompt, stream=False)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generating affirmation: {e}")
+        return "You matter, and your feelings are valid. Take one step at a time. 💙"
 
-    "meditative_music": [
-        {"title": "Peaceful Meditation Music", "url": "https://www.youtube.com/watch?v=2Oe5uX4lQRI", "description": "Soft instrumental music designed to help you relax, meditate, and release stress."},
-        {"title": "Deep Sleep Music - Relaxing Piano & Nature Sounds", "url": "https://www.youtube.com/watch?v=1ZYbU82GVz4", "description": "Calm piano music combined with nature sounds to aid meditation, focus, and deep sleep."}
-    ],
-    "movies": {
-        "positive": [
-            {"title": "The Pursuit of Happyness", "description": "A heartwarming story of resilience and determination as a struggling salesman pursues a better life for himself and his son.", "youtube_link": "https://www.youtube.com/watch?v=DM8fVfc1NiE"},
-            {"title": "Zindagi Na Milegi Dobara", "description": "A Bollywood film about friendship and self-discovery, encouraging you to seize the day.", "youtube_link": "https://www.youtube.com/watch?v=5E4I1T_1lU"}
-        ],
-        "negative": [
-            {"title": "Silver Linings Playbook", "description": "A story about finding hope and connection amidst personal struggles, perfect for lifting your spirits.", "youtube_link": "https://www.youtube.com/watch?v=Lj5_FhLaaQQ"},
-            {"title": "Taare Zameen Par", "description": "A touching Bollywood film about overcoming challenges and embracing one's unique strengths.", "youtube_link": "https://www.youtube.com/watch?v=5iA2edv-yhE"}
-        ],
-        "neutral": [
-            {"title": "The Shawshank Redemption", "description": "A timeless tale of hope and friendship, showing the power of perseverance.", "youtube_link": "https://www.youtube.com/watch?v=6hB3S9bIaco"},
-            {"title": "Dil Chahta Hai", "description": "A Bollywood classic about friendship and life's transitions, perfect for a reflective mood.", "youtube_link": "https://www.youtube.com/watch?v=6wJ4I1T_1lU"}
-        ]
-    },
-    "books": {
-    "positive": [
-        {"title": "The Power of Positive Thinking", "author": "Norman Vincent Peale"},
-        {"title": "Atomic Habits", "author": "James Clear"},
-        {"title": "The Alchemist", "author": "Paulo Coelho"},
-        {"title": "Man's Search for Meaning", "author": "Viktor E. Frankl"},
-        {"title": "How to Win Friends and Influence People", "author": "Dale Carnegie"},
-        {"title": "Awaken the Giant Within", "author": "Tony Robbins"},
-        {"title": "You Are a Badass", "author": "Jen Sincero"},
-        {"title": "The Happiness Advantage", "author": "Shawn Achor"},
-        {"title": "The Four Agreements", "author": "Don Miguel Ruiz"},
-        {"title": "Drive: The Surprising Truth About What Motivates Us", "author": "Daniel H. Pink"}
-    ],
-    "negative": [
-        {"title": "Feeling Good: The New Mood Therapy", "author": "David D. Burns"},
-        {"title": "The Subtle Art of Not Giving a F*ck", "author": "Mark Manson"},
-        {"title": "Daring Greatly", "author": "Brené Brown"},
-        {"title": "The Gifts of Imperfection", "author": "Brené Brown"},
-        {"title": "Mindset: The New Psychology of Success", "author": "Carol S. Dweck"},
-        {"title": "Radical Acceptance", "author": "Tara Brach"},
-        {"title": "Lost Connections", "author": "Johann Hari"},
-        {"title": "Emotional Agility", "author": "Susan David"},
-        {"title": "Rising Strong", "author": "Brené Brown"},
-        {"title": "When Things Fall Apart", "author": "Pema Chödrön"}
-    ],
-    "neutral": [
-        {"title": "Sapiens: A Brief History of Humankind", "author": "Yuval Noah Harari"},
-        {"title": "Educated", "author": "Tara Westover"},
-        {"title": "Quiet: The Power of Introverts", "author": "Susan Cain"},
-        {"title": "Thinking, Fast and Slow", "author": "Daniel Kahneman"},
-        {"title": "The 7 Habits of Highly Effective People", "author": "Stephen R. Covey"},
-        {"title": "Outliers: The Story of Success", "author": "Malcolm Gladwell"},
-        {"title": "Grit: The Power of Passion and Perseverance", "author": "Angela Duckworth"},
-        {"title": "Principles: Life and Work", "author": "Ray Dalio"},
-        {"title": "Range: Why Generalists Triumph in a Specialized World", "author": "David Epstein"},
-        {"title": "Deep Work: Rules for Focused Success in a Distracted World", "author": "Cal Newport"}
-    ]
-}
+def generate_study_tips(mood):
+    """Generate contextual study tips using Google Generative AI based on user's mood."""
+    try:
+        mood_context = {
+            "😊 Positive": "the student is feeling motivated and positive",
+            "😞 Negative": "the student is feeling overwhelmed, demotivated, or struggling",
+            "😐 Neutral": "the student is in a neutral headspace, seeking structure"
+        }.get(mood, "the student is seeking study guidance")
+        
+        prompt = f"""You are Anchor AI's study coach. The user is a student and {mood_context}. 
+        Generate 2 practical, encouraging, and personalized study tips that:
+        - Match their current emotional state
+        - Are actionable and specific
+        - Include a mix of motivation, technique, and self-compassion
+        - Feel conversational and supportive, not preachy
+        
+        Format as bullet points with emojis. Keep each tip to 1-2 sentences.
+        Respond ONLY with the tips, no intro text."""
+        
+        chat = genai.GenerativeModel('gemini-2.5-flash').start_chat()
+        response = chat.send_message(prompt, stream=False)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generating study tips: {e}")
+        return "• Take a 25-minute study session with breaks\n• You've got this! 💪"
 
-}
+def generate_breathing_exercise():
+    """Generate an AI-guided breathing exercise with markdown formatting."""
+    try:
+        prompt = """You are Anchor AI's wellness guide. Create a short, calming breathing exercise (2-3 rounds). 
+        Make it clear-step-by-step with breathing counts. Format with markdown for clarity.
+        Include:
+        - Brief intro
+        - Step-by-step breathing instructions with counts
+        - Closing affirmation
+        
+        Use markdown formatting (**, __, etc). Keep it under 150 words."""
+        
+        chat = genai.GenerativeModel('gemini-2.5-flash').start_chat()
+        response = chat.send_message(prompt, stream=False)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generating breathing exercise: {e}")
+        return "### Calm Breathing Exercise\n\n**Inhale** for 4 seconds... **Hold** for 4 seconds... **Exhale** for 4 seconds.\n\nRepeat 3 times. You're doing great! 🌬️"
 
-# Daily Affirmations
-affirmations = [
-    "💪 You are capable of achieving great things, one step at a time. Remember that even the tallest mountains are climbed by taking small, steady steps—keep going and you will reach your peak.",
-    "🌠 As Walt Disney said, 'All our dreams can come true, if we have the courage to pursue them.' Let this remind you that your dreams are not impossible—they are waiting for you to act with courage, faith, and persistence.",
-    "🔥 You are stronger than you know, and every challenge is a chance to grow. Obstacles are not meant to break you, but to reveal the depth of your resilience and the strength of your spirit.",
-    "🌸 Like the lotus flower, you can rise above challenges and shine. No matter how muddy the water may be, you hold the power to bloom with grace, beauty, and determination.",
-    "✨ Believe in yourself, for you have the power to shape your future. Every thought you nurture and every action you take creates ripples that build the life you truly desire.",
-    "🔄 Every setback is a setup for an even greater comeback. Life's detours may slow you down, but they also prepare you for opportunities far greater than what you had planned.",
-    "🚀 Your potential is limitless, and every day is a new opportunity to discover it. The only limits are the ones you place on yourself—believe bigger, dream bolder, and act with confidence.",
-    "🛤️ The journey may be tough, but so are you. With patience, persistence, and faith, you will find that every step forward, no matter how small, brings you closer to your destination.",
-    "🌈 You deserve happiness, peace, and success—never doubt your worth. You are worthy of love, respect, and abundance simply because you exist, and nothing can take that away from you.",
-    "⛰️ Each small step you take builds momentum for your big victories. Success doesn't happen overnight—it is the result of consistent effort, persistence, and belief in your path.",
-    "📖 You are not defined by your past, but by the choices you make today and tomorrow. Every sunrise gives you a fresh page to write a new story—make it one filled with courage and hope.",
-    "☀️ Even on the hardest days, you are making progress simply by showing up. Strength is not about never struggling; it's about showing up despite the struggle, again and again.",
-    "🌍 The universe is full of opportunities waiting for you to claim them. Trust that life is unfolding in your favor, even when you cannot yet see the bigger picture.",
-    "🧠 Your mind is powerful—feed it positivity, and your life will reflect it. Focus on thoughts of gratitude, hope, and strength, and watch how your reality transforms into something brighter.",
-    "🪜 Challenges are not roadblocks; they are stepping stones toward greatness. Each difficulty you overcome prepares you for bigger opportunities and a stronger, wiser version of yourself.",
-    "🌳 Remember: storms make trees take deeper roots. Just as the tree becomes stronger after enduring wind and rain, you too are growing deeper resilience with every challenge you face.",
-    "⏳ Be patient with yourself; growth takes time, but every moment brings you closer to your dreams. Flowers do not bloom overnight, and neither does greatness—it unfolds beautifully, in its own time.",
-    "❤️ You are enough, exactly as you are, and every day you are becoming more of who you are meant to be. You don't need to prove your worth to anyone—your existence itself is proof of your significance.",
-    "🎯 Success is not about speed, but consistency—every effort compounds into achievement. Small, repeated actions build habits, habits build character, and character shapes destiny.",
-    "🌟 You carry light within you, and the world becomes brighter when you let it shine. Never dim yourself to fit in—your uniqueness is a gift that inspires and uplifts those around you."
-]
+def generate_gratitude_response(gratitude_items):
+    """Generate AI response to user's gratitude reflection."""
+    try:
+        items_str = "\n".join([f"- {item}" for item in gratitude_items])
+        prompt = f"""You are Anchor AI, reflecting on a student's gratitude practice. They shared:
+        {items_str}
+        
+        Craft a warm, genuine response that:
+        - Acknowledges each gratitude item with authentic appreciation
+        - Connects these items to their emotional wellbeing
+        - Reinforces the power of gratitude
+        - Ends with encouragement for their day ahead
+        
+        Keep it 3-4 sentences, warm and personal. Respond ONLY with the reflection."""
+        
+        chat = genai.GenerativeModel('gemini-2.5-flash').start_chat()
+        response = chat.send_message(prompt, stream=False)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generating gratitude response: {e}")
+        return "Those are beautiful things to be grateful for. Carrying this gratitude with you will brighten your day. 🌟"
 
+def detect_emotional_situation(user_text, sentiment_score):
+    """Use AI to detect user's emotional situation and categorize it."""
+    try:
+        prompt = f"""Analyze this user message and emotional context to detect their situation:
+        Message: "{user_text}"
+        Sentiment Score: {sentiment_score} (range: -1 to 1, negative to positive)
+        
+        Identify if they're experiencing one of: breakup, sad, study, stuck, general, none
+        
+        Return ONLY the category name, nothing else."""
+        
+        chat = genai.GenerativeModel('gemini-2.5-flash').start_chat()
+        response = chat.send_message(prompt, stream=False)
+        situation = response.text.strip().lower()
+        
+        valid_situations = ['breakup', 'sad', 'study', 'stuck', 'general', 'none']
+        return situation if situation in valid_situations else 'none'
+    except Exception as e:
+        print(f"Error detecting emotional situation: {e}")
+        return 'none'
 
+def ask_for_video_permission(situation, user_text):
+    """Generate a warm, permission-asking message before suggesting videos."""
+    try:
+        prompt = f"""You are Anchor AI. The user is experiencing: {situation}
+        Their message: "{user_text}"
+        
+        Generate a warm, natural, permission-asking message to see if they'd like video suggestions.
+        Be brief (1-2 sentences), genuine, and not pushy.
+        Example tone: "I found some videos that might help... would you like me to share them?"
+        
+        Respond ONLY with the message."""
+        
+        chat = genai.GenerativeModel('gemini-2.5-flash').start_chat()
+        response = chat.send_message(prompt, stream=False)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generating permission request: {e}")
+        return "I found some videos that might help. Would you like me to share them?"
+
+def get_videos_by_situation(situation):
+    """Fetch relevant videos from recommendations based on detected situation."""
+    try:
+        video_map = {
+            'breakup': [v for v in recommendations.get('motivational_videos', []) if any(word in v.get('title', '').lower() for word in ['breakup', 'heartbreak', 'love', 'relationship'])],
+            'sad': [v for v in recommendations.get('motivational_videos', []) if any(word in v.get('title', '').lower() for word in ['sad', 'depression', 'anxiety', 'mental', 'heal'])],
+            'study': [v for v in recommendations.get('motivational_videos', []) if any(word in v.get('title', '').lower() for word in ['study', 'focus', 'productivity', 'motivation', 'exam'])],
+            'stuck': [v for v in recommendations.get('motivational_videos', []) if any(word in v.get('title', '').lower() for word in ['stuck', 'progress', 'growth', 'change', 'breakthrough'])],
+            'general': random.sample(recommendations.get('motivational_videos', []), min(3, len(recommendations.get('motivational_videos', []))))
+        }
+        videos = video_map.get(situation, [])
+        if not videos:
+            videos = random.sample(recommendations.get('motivational_videos', []), min(2, len(recommendations.get('motivational_videos', []))))
+        return videos[:5]  # Return max 5 videos
+    except Exception as e:
+        print(f"Error getting videos: {e}")
+        return []
+
+def format_video_suggestions(situation, videos):
+    """Format video suggestions with markdown links and descriptions."""
+    try:
+        if not videos:
+            return "I couldn't find specific videos right now, but I'm here to listen and support you. 💙"
+        
+        markdown = f"**Videos for you ({situation}):**\n\n"
+        for i, video in enumerate(videos[:5], 1):
+            title = video.get('title', 'Video')
+            url = video.get('url', '#')
+            description = video.get('description', '')[:80]  # Truncate description
+            markdown += f"**{i}. [{title}]({url})**\n"
+            if description:
+                markdown += f"   {description}...\n\n"
+        return markdown
+    except Exception as e:
+        print(f"Error formatting video suggestions: {e}")
+        return "Here are some videos that might help. I hope they bring you some comfort. 💫"
+
+# Legacy function for compatibility
 def get_daily_affirmation():
-    return random.choice(affirmations)
-
-# Study Tips Based on Mood
-study_tips = {
-    "😊 Positive": [
-        "You're in a great mood—use this energy to tackle a challenging topic with enthusiasm! When you're motivated, your brain absorbs more information, so pick that subject you've been putting off and dive in with confidence.",
-        "Try the Pomodoro technique: 25 minutes of focused study, then a 5-minute break to keep the good vibes going. During breaks, do something light and enjoyable like stretching, sipping water, or listening to your favorite upbeat song.",
-        "Celebrate your progress by reviewing what you've learned today—it'll boost your confidence! Write down three key things you mastered, no matter how small, and remind yourself that consistency builds success.",
-        "Channel your positivity into teaching someone else what you just studied. Explaining a concept aloud or writing it as if teaching can deepen your understanding and reinforce your memory.",
-        "Use your high energy to plan ahead: organize your notes, create a study timetable, or map out difficult concepts you'll conquer next. Preparation today makes tomorrow easier and more productive."
-    ],
-    "😞 Negative": [
-        "Start with a small, manageable task to build momentum, as small wins can lift your spirits. For example, read one page, solve a single problem, or write a short summary. That spark of progress will push you forward.",
-        "As Thomas Edison said, 'I have not failed. I've just found 10,000 ways that won't work.' Remember that mistakes are not signs of weakness but stepping stones to mastery. Each attempt builds resilience and insight.",
-        "Study in a comfortable space with some light background music to ease your mind. Create an environment that feels calm, with minimal distractions, maybe add a cup of tea or water nearby to refresh yourself.",
-        "Practice self-kindness: remind yourself that it's okay to have off days. Instead of pushing too hard, choose gentle learning methods like watching an explainer video, using flashcards, or revising notes in smaller portions.",
-        "Visualize your end goal—a completed degree, a rewarding career, or simply understanding this one tough topic. Motivation often comes when we reconnect with the bigger picture of why we started studying in the first place."
-    ],
-    "😐 Neutral": [
-        "Break your study session into smaller chunks to maintain focus and avoid overwhelm. Aim for 30–40 minutes of active learning followed by a meaningful 10-minute break where you relax or stretch.",
-        "Try summarizing key points in your own words to make studying more engaging. Creating mind maps, flowcharts, or simple doodles can make abstract ideas more concrete and easier to recall later.",
-        "Set a clear goal for this session, like mastering one concept, to stay on track. Clarity fuels productivity—write your goal on a sticky note and place it where you can see it as a reminder.",
-        "Use active recall by closing your notes and testing yourself on what you just learned. This strengthens memory and helps you identify knowledge gaps you might miss with passive rereading.",
-        "Switch up your study method to spark engagement—if you usually read, try recording yourself explaining the topic, or quiz yourself with flashcards. A slight change in routine can reignite focus."
-    ]
-}
-
-
-def get_study_tips(mood):
-    return random.sample(study_tips[mood], min(2, len(study_tips[mood])))
+    """Generate daily affirmation using AI (10 for positive mood, -0.5 for neutral/negative)."""
+    mood_score = 0.5 if random.random() > 0.5 else -0.5  # Random mood for daily affirmations
+    return generate_affirmation(mood_score)
 
 # Breathing Exercise
 def breathing_exercise(sid):
-    socketio.emit('ai_response', "Anchor: Let's do a quick breathing exercise to help you relax.", room=sid)
-    socketio.emit('ai_response', "Inhale deeply for 4 seconds, hold for 4 seconds, exhale for 4 seconds. Repeat 3 times.", room=sid)
-    socketio.emit('ai_response', "1. Inhale... Hold... Exhale...", room=sid)
-    socketio.sleep(12)
-    socketio.emit('ai_response', "2. Inhale... Hold... Exhale...", room=sid)
-    socketio.sleep(12)
-    socketio.emit('ai_response', "3. Inhale... Hold... Exhale...", room=sid)
-    socketio.sleep(12)
-    socketio.emit('ai_response', "Anchor: Great job! You should feel a bit calmer now. Ready to continue?", room=sid)
+    """Guide user through an AI-generated breathing exercise."""
+    exercise = generate_breathing_exercise()
+    socketio.emit('ai_response', f"Anchor: {exercise}", room=sid)
 
 # Gratitude Prompt
 def start_gratitude_prompt(sid):
@@ -1067,8 +869,12 @@ def chat():
         session['state'] = None
     if 'last_mood' not in session:
         session['last_mood'] = "😐 Neutral"
+    if 'last_sentiment_score' not in session:
+        session['last_sentiment_score'] = 0
     if 'therapy_responses' not in session:
         session['therapy_responses'] = []
+    if 'video_offer_situation' not in session:
+        session['video_offer_situation'] = None
     return render_template('index.html')
 
 @app.route('/preview')
@@ -1091,7 +897,8 @@ def remove_goal_route(goal_id):
 
 @socketio.on('connect')
 def handle_connect():
-    emit('ai_response', f"Anchor: Here's your daily affirmation: {get_daily_affirmation()}")
+    affirmation = generate_affirmation(0)
+    emit('ai_response', f"Anchor: {affirmation}")
     emit('update_tasks', format_tasks())
     emit('update_goals', format_goals())
 
@@ -1118,7 +925,7 @@ def handle_user_message(msg):
 
     now, mood, score, follow_up = log_mood(msg)
     session['last_mood'] = mood
-
+    session['last_sentiment_score'] = score
     state = session.get('state')
 
     # Handle Therapy Mode - Let AI handle the conversation flow naturally
@@ -1209,29 +1016,64 @@ def handle_user_message(msg):
             if len(session['messages']) > 20:
                 session['messages'] = session['messages'][-20:]
             try:
-                completion = client.chat.completions.create(
-                    model="google/gemma-2-9b-it",
-                    messages=session['messages']
-                )
-                response_text = completion.choices[0].message.get("content", "")
-                emit('ai_response', f"Anchor: {response_text.strip()}")
+                model = genai.GenerativeModel('gemini-2.5-flash')
+                # Convert messages to Gemini format
+                chat_history = []
+                for m in session['messages']:
+                    if m['role'] != 'system':
+                        chat_history.append({"role": m['role'], "parts": [m['content']]})
+                
+                # Use chat session for smooth conversation
+                if chat_history:
+                    chat = model.start_chat(history=chat_history[:-1])
+                    response = chat.send_message(chat_history[-1]['parts'][0])
+                else:
+                    response = model.generate_content(f"I searched for '{query}'. Here are the results:\n{result_text_plain}")
+                response_text = response.text.strip()
+                emit('ai_response', f"Anchor: {response_text}")
                 session['messages'].append({"role": "assistant", "content": response_text})
             except Exception as e:
                 emit('ai_response', f"Anchor: I found those search results for you! Is there anything specific you'd like to know about them?")
         return
 
     if "daily affirmation" in msg.lower():
-        emit('ai_response', f"Anchor: Here's your affirmation: {get_daily_affirmation()}")
+        affirmation = generate_affirmation(score)
+        emit('ai_response', f"Anchor: {affirmation}")
         return
-
+    
     if "study tips" in msg.lower() or "help me study" in msg.lower():
-        tips = get_study_tips(mood)
-        tip_text = "<p>Anchor: Here are some study tips tailored to your mood:</p><ul>"
-        for i, tip in enumerate(tips, 1):
-            tip_text += f"<li>{i}. {tip}</li>"
-        tip_text += "</ul>"
-        emit('ai_response', tip_text)
+        tips = generate_study_tips(mood)
+        emit('ai_response', f"Anchor: {tips}")
         return
+    
+    # Smart Video Recommendation System
+    if msg.lower().strip() in ["suggest", "suggest videos", "show me videos", "any suggestions"]:
+        situation = detect_emotional_situation(msg, score)
+        
+        # Ask permission based on their situation
+        permission_ask = ask_for_video_permission(situation, msg)
+        emit('ai_response', f"Anchor: {permission_ask}")
+        
+        # Get videos for their situation
+        videos = get_videos_by_situation(situation)
+        if videos:
+            video_suggestions = format_video_suggestions(situation, videos)
+            emit('ai_response', f"Anchor: {video_suggestions}")
+        
+        session['messages'].append({"role": "assistant", "content": permission_ask})
+        return
+    
+    # Handle affirmative response to video suggestions
+    affirmative_words = ['yes', 'yeah', 'sure', 'ok', 'okay', 'please', 'why not', 'go ahead', 'show me']
+    if any(word in msg.lower() for word in affirmative_words) and session.get('video_offer_situation'):
+        situation = session.get('video_offer_situation')
+        videos = get_videos_by_situation(situation)
+        if videos:
+            video_suggestions = format_video_suggestions(situation, videos)
+            emit('ai_response', f"Anchor: {video_suggestions}")
+            session['messages'].append({"role": "assistant", "content": video_suggestions})
+            session['video_offer_situation'] = None
+            return
 
     if "breathing exercise" in msg.lower() or "calm me down" in msg.lower():
         breathing_exercise(sid)
@@ -1274,85 +1116,96 @@ def handle_user_message(msg):
         emit('ai_response', rec_text)
         return
 
-    # Enhanced proactive emotional check-ins (only when not in therapy mode)
-    if not state and random.random() < 0.25:  # 25% chance for more natural conversation flow
-        emotional_check_ins = [
-            "I'm sensing something in your message - how are you really feeling right now?",
-            "You know I care about you, right? What's been on your heart lately?",
-            "I'm here for whatever you're going through. Want to talk about what's happening in your world?",
-            "Sometimes the most important conversations start with 'how are you doing?' So... how are you really doing?",
-            "I notice the tone in your message. Is there something deeper you'd like to share with me?"
-        ]
-        check_in = random.choice(emotional_check_ins)
-        emit('ai_response', f"Anchor: {check_in}")
-        session['messages'].append({"role": "assistant", "content": check_in})
-
-    # Process with AI - Enhanced with emotional intelligence context
+   
     session['messages'].append({"role": "user", "content": msg})
-    
-    # Add emotional context to help AI respond more empathetically
-    if score < -0.3:  # Significantly negative sentiment
+   
+    if score < -0.3: # Significantly negative sentiment
         emotional_context = {
-            "role": "system", 
+            "role": "system",
             "content": f"The user seems to be struggling emotionally (sentiment score: {score:.3f}). Respond with extra compassion, validation, and support. Acknowledge their feelings and offer gentle guidance or comfort."
         }
         session['messages'].append(emotional_context)
-    elif score > 0.3:  # Significantly positive sentiment
+    elif score > 0.3: # Significantly positive sentiment
         emotional_context = {
-            "role": "system", 
+            "role": "system",
             "content": f"The user seems to be in a positive mood (sentiment score: {score:.3f}). Share in their positivity while being genuine. This is a good time to encourage growth or celebrate their progress."
         }
         session['messages'].append(emotional_context)
-
     # Maintain conversation history limit
-    if len(session['messages']) > 25:  # Increased limit for better context
+    if len(session['messages']) > 25: # Increased limit for better context
         # Keep system message and recent conversation
-        system_msgs = [msg for msg in session['messages'] if msg['role'] == 'system']
+        system_msgs = [m for m in session['messages'] if m['role'] == 'system']
         recent_msgs = session['messages'][-20:]
         session['messages'] = system_msgs + recent_msgs
-
     try:
-        completion = client.chat.completions.create(
-            model="google/gemma-2-9b-it",
-            messages=session['messages']
-        )
-        response_text = completion.choices[0].message.get("content", "").strip()
-
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        # Convert messages to Gemini format
+        chat_history = []
+        for m in session['messages']:
+            if m['role'] != 'system':
+                chat_history.append({"role": m['role'], "parts": [m['content']]})
+        
+        # Use chat session for smooth conversation
+        if chat_history:
+            chat = model.start_chat(history=chat_history[:-1])
+            response = chat.send_message(chat_history[-1]['parts'][0])
+        else:
+            response = model.generate_content(msg)
+        response_text = response.text.strip()
+        
         # Enhanced web search integration for knowledge gaps
         knowledge_gap_indicators = [
-            "i don't know", "i'm not sure", "i cannot find", "i'm not familiar", 
+            "i don't know", "i'm not sure", "i cannot find", "i'm not familiar",
             "i don't have information", "i'm uncertain", "i can't provide specific"
         ]
-        
+       
         if any(phrase in response_text.lower() for phrase in knowledge_gap_indicators):
             search_results = search_and_fetch_content(msg, num_results=2)
             if search_results:
-                combined_content = "\n\n".join([r["content"][:800] for r in search_results])  # Limit content
-                search_context = {
-                    "role": "system", 
-                    "content": f"Here's relevant information I found to help answer the user's question:\n{combined_content}\n\nUse this information naturally in your response as Anchor AI, maintaining your empathetic and supportive personality."
-                }
-                session['messages'].append(search_context)
-                
-                completion = client.chat.completions.create(
-                    model="google/gemma-2-9b-it",
-                    messages=session['messages']
-                )
-                response_text = completion.choices[0].message.get("content", "").strip()
-
+                combined_content = "\n\n".join([r["content"][:800] for r in search_results]) # Limit content
+                search_context = f"Here's relevant information I found to help answer the question:\n{combined_content}\n\nUse this information naturally in your response as Anchor AI, maintaining your empathetic and supportive personality."
+               
+                # Continue conversation with search context
+                response = chat.send_message(search_context + "\n\n" + msg)
+                response_text = response.text.strip()
+        
+        # Format response with markdown support
         emit('ai_response', f"Anchor: {response_text}")
         session['messages'].append({"role": "assistant", "content": response_text})
-
-    except Exception as e:
-        # Fallback to empathetic response based on sentiment
-        if score < -0.2:
-            fallback_response = "I can sense you might be going through something difficult right now. I'm here for you, and even when I can't find the perfect words, I want you to know that your feelings are valid and you're not alone in this."
-        elif score > 0.2:
-            fallback_response = "I love the positive energy you're bringing! Even when I can't access all the information I'd like to share with you, your spirit lifts me up. Keep shining!"
-        else:
-            fallback_response = "I'm here with you, even when the technical side of things doesn't work perfectly. What matters most is our connection and that you know someone cares about what you're going through."
         
-        emit('ai_response', f"Anchor: {fallback_response}")
+        # Smart video suggestion after conversation (for significant emotions)
+        if score < -0.3 or score > 0.5:  # Very sad or very happy
+            situation = detect_emotional_situation(msg, score)
+            
+            # Only offer suggestions for serious situations, not every time
+            if situation in ['breakup', 'sad', 'stuck']:
+                # 50% chance to offer videos for very emotional states
+                if random.random() < 0.5:
+                    offer_message = ask_for_video_permission(situation, msg)
+                    emit('ai_response', f"Anchor: {offer_message}")
+                    session['messages'].append({"role": "assistant", "content": offer_message})
+                    
+                    # Store that we've offered videos
+                    session['video_offer_situation'] = situation
+            elif situation == 'study' and score > 0.2:
+                # Be enthusiastic about study suggestions
+                if random.random() < 0.4:
+                    offer_message = ask_for_video_permission(situation, msg)
+                    emit('ai_response', f"Anchor: {offer_message}")
+                    session['messages'].append({"role": "assistant", "content": offer_message})
+                    session['video_offer_situation'] = situation
+    except Exception as e:
+        # Try a simple AI response instead of hardcoded fallback
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            fallback_prompt = f"User said: '{msg}'. Respond as Anchor AI with empathy and support. Keep it brief and natural."
+            fallback_response = model.generate_content(fallback_prompt)
+            response_text = fallback_response.text.strip()
+            emit('ai_response', f"Anchor: {response_text}")
+            session['messages'].append({"role": "assistant", "content": response_text})
+        except:
+            # Only use minimal fallback if API fails completely
+            emit('ai_response', "Anchor: I'm listening. Take your time and share what's on your mind.")
 
 @socketio.on('feature')
 def handle_feature(feat):
