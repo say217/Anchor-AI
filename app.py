@@ -12,7 +12,7 @@ import io
 import base64
 import copy
 import os
-from flask import Flask, render_template, session, request, jsonify, redirect, url_for
+from flask import Flask, render_template, session, request, jsonify, redirect, url_for, send_from_directory
 from flask_socketio import SocketIO, emit
 import threading
 import time
@@ -459,10 +459,10 @@ def get_mood_plot():
         line_width = 1.5
         title_size = 14
     
-    # Create the plot with dark theme
-    plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=figsize, facecolor='#1a1a1a')
-    ax.set_facecolor('#1a1a1a')
+    # Create the plot with white theme
+    plt.style.use('default')
+    fig, ax = plt.subplots(figsize=figsize, facecolor='white')
+    ax.set_facecolor('white')
     
     # Color-code points based on mood
     colors = []
@@ -475,28 +475,28 @@ def get_mood_plot():
             colors.append('#FFC107')  # Yellow for neutral
     
     # Plot with enhanced styling
-    ax.scatter(range(len(scores)), scores, c=colors, s=marker_size*10, alpha=0.8, edgecolors='white', linewidth=0.5)
-    ax.plot(range(len(scores)), scores, color='cyan', alpha=0.7, linewidth=line_width)
+    ax.scatter(range(len(scores)), scores, c=colors, s=marker_size*10, alpha=0.8, edgecolors='black', linewidth=0.5)
+    ax.plot(range(len(scores)), scores, color='#2196F3', alpha=0.7, linewidth=line_width)
     
     # Add trend line for larger datasets
     if data_count > 10:
         z = np.polyfit(range(len(scores)), scores, 1)
         p = np.poly1d(z)
-        ax.plot(range(len(scores)), p(range(len(scores))), "--", alpha=0.6, color='orange', linewidth=1)
+        ax.plot(range(len(scores)), p(range(len(scores))), "--", alpha=0.6, color='#FF9800', linewidth=1)
     
-    # Styling
-    ax.axhline(0, color="gray", linestyle="--", linewidth=1, alpha=0.5)
-    ax.axhline(0.3, color="green", linestyle=":", linewidth=0.8, alpha=0.4, label="Positive Threshold")
-    ax.axhline(-0.3, color="red", linestyle=":", linewidth=0.8, alpha=0.4, label="Negative Threshold")
+    # Styling with visible grid
+    ax.axhline(0, color="#999999", linestyle="--", linewidth=1, alpha=0.7)
+    ax.axhline(0.3, color="#4CAF50", linestyle=":", linewidth=0.8, alpha=0.5, label="Positive Threshold")
+    ax.axhline(-0.3, color="#F44336", linestyle=":", linewidth=0.8, alpha=0.5, label="Negative Threshold")
     
     # Labels and title
-    ax.set_ylabel("Sentiment Score", color='white', fontsize=10)
-    ax.set_xlabel("Conversation Timeline", color='white', fontsize=10)
-    ax.set_title("Your Emotional Journey with Anchor AI", color='white', fontsize=title_size, pad=20)
+    ax.set_ylabel("Sentiment Score", color='#000000', fontsize=10)
+    ax.set_xlabel("Conversation Timeline", color='#000000', fontsize=10)
+    ax.set_title("🌟 Sentiment Analysis Graph", color='#1a1a1a', fontsize=title_size, pad=20, weight='bold')
     
     # Customize ticks
-    ax.tick_params(colors='white', labelsize=8)
-    ax.grid(True, alpha=0.2)
+    ax.tick_params(colors='#000000', labelsize=8)
+    ax.grid(True, alpha=0.4, linestyle='-', linewidth=0.5, color='#cccccc')
     
     # Add mood indicators
     if data_count <= 20:  # Only show detailed labels for smaller datasets
@@ -513,11 +513,9 @@ def get_mood_plot():
     # Adjust layout
     plt.tight_layout()
     
-    # Convert to base64
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=100, bbox_inches='tight', facecolor='#1a1a1a')
-    buf.seek(0)
-    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    # Save plot to file
+    plot_path = 'analysis/mood_analysis.png'
+    plt.savefig(plot_path, format='png', dpi=100, bbox_inches='tight', facecolor='white')
     plt.close()
     
     # Calculate statistics
@@ -529,31 +527,31 @@ def get_mood_plot():
     
     # Create comprehensive mood analysis
     analysis_html = f"""
-    <div class='mood-plot-container' style='background: #1a1a1a; padding: 20px; border-radius: 10px; margin: 10px 0;'>
-        <img src="data:image/png;base64,{img_base64}" alt="Mood Analysis Plot" style="max-width:100%; border-radius: 8px; margin-bottom: 15px;">
+    <div class='mood-plot-container' style='background: #f5f5f5; padding: 20px; border-radius: 10px; margin: 10px 0; border: 1px solid #ddd;'>
+        <img src="/analysis/mood_analysis.png" alt="Sentiment Analysis Graph" style="max-width:100%; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
         
-        <div class='mood-stats' style='color: white; font-family: Arial, sans-serif;'>
-            <h3 style='color: cyan; margin-bottom: 15px;'>Your Emotional Insights</h3>
+        <div class='mood-stats' style='color: #1a1a1a; font-family: Arial, sans-serif;'>
+            <h3 style='color: #1a1a1a; margin-bottom: 15px;'>📊 Emotional Insights</h3>
             
             <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;'>
-                <div style='background: #000; padding: 10px; border-radius: 5px;'>
+                <div style='background: white; padding: 10px; border-radius: 5px; border: 1px solid #ddd;'>
                     <strong style='color: #4CAF50;'>😊 Positive Moments:</strong> {positive_count} ({positive_count/len(scores)*100:.1f}%)
                 </div>
-                <div style='background: #000; padding: 10px; border-radius: 5px;'>
+                <div style='background: white; padding: 10px; border-radius: 5px; border: 1px solid #ddd;'>
                     <strong style='color: #F44336;'>😞 Challenging Times:</strong> {negative_count} ({negative_count/len(scores)*100:.1f}%)
                 </div>
-                <div style='background: #000; padding: 10px; border-radius: 5px;'>
+                <div style='background: white; padding: 10px; border-radius: 5px; border: 1px solid #ddd;'>
                     <strong style='color: #FFC107;'>😐 Neutral Periods:</strong> {neutral_count} ({neutral_count/len(scores)*100:.1f}%)
                 </div>
             </div>
             
-            <div style='background: #000; padding: 15px; border-radius: 5px; margin-bottom: 10px;'>
+            <div style='background: white; padding: 15px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ddd;'>
                 <strong>Overall Mood Trend:</strong> <span style='color: {"#4CAF50" if avg_score > 0.05 else "#F44336" if avg_score < -0.05 else "#FFC107"};'>{recent_trend.title()}</span>
                 <br>
                 <strong>Average Sentiment:</strong> <span style='color: {"#4CAF50" if avg_score > 0 else "#F44336" if avg_score < 0 else "#FFC107"};'>{avg_score:.3f}</span>
             </div>
             
-            <p style='font-size: 14px; color: #ccc; font-style: italic;'>
+            <p style='font-size: 14px; color: #555; font-style: italic;'>
                 💙 Remember, it's completely normal to experience a range of emotions. I'm here to support you through all of them!
             </p>
         </div>
@@ -836,10 +834,27 @@ def get_preview(url):
     except Exception:
         return {'title': url, 'desc': '', 'image': ''}
 
-# Flask App
-app = Flask(__name__)
+# Create analysis folder if it doesn't exist
+if not os.path.exists('analysis'):
+    os.makedirs('analysis')
+
+# Create static folder if it doesn't exist
+if not os.path.exists('static'):
+    os.makedirs('static')
+
+# Create analysis folder if it doesn't exist
+if not os.path.exists('analysis'):
+    os.makedirs('analysis')
+
+# Flask App - Serve static files from 'static' folder
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = 'super_secret_key'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Route to serve analysis plots from analysis folder
+@app.route('/analysis/<path:filename>')
+def serve_analysis(filename):
+    return send_from_directory('analysis', filename)
 
 load_data()
 
