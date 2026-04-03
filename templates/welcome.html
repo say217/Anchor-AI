@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="/static/css/welcome.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 </head>
 </head>
 <body>
@@ -40,8 +40,10 @@
     </div>
   </div>
   <div class="hero-3d">
-    <canvas id="hero-canvas"></canvas>
-    <div class="hero-3d-label">Interactive — drag to explore</div>
+    <video id="hero-video" class="hero-video" autoplay muted loop playsinline>
+      <source src="/static/138962-770800093.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
   </div>
 </section>
 
@@ -260,176 +262,6 @@
 </footer>
 
 <script>
-/* ── 3D HERO: Floating Anchor / Mind Orb ── */
-(function() {
-  const canvas = document.getElementById('hero-canvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  camera.position.z = 5;
-
-  // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambientLight);
-
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(3, 5, 5);
-  scene.add(dirLight);
-
-  const rimLight = new THREE.DirectionalLight(0x888888, 0.6);
-  rimLight.position.set(-4, -2, -3);
-  scene.add(rimLight);
-
-  // Core sphere (the orb)
-  const orbGeo = new THREE.SphereGeometry(1.1, 64, 64);
-  const orbMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    roughness: 0.1,
-    metalness: 0.05,
-    wireframe: false,
-  });
-  const orb = new THREE.Mesh(orbGeo, orbMat);
-  scene.add(orb);
-
-  // Wireframe shell
-  const wireGeo = new THREE.SphereGeometry(1.25, 24, 24);
-  const wireMat = new THREE.MeshBasicMaterial({
-    color: 0x111111,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.08,
-  });
-  const wire = new THREE.Mesh(wireGeo, wireMat);
-  scene.add(wire);
-
-  // Outer ring
-  const ringGeo = new THREE.TorusGeometry(1.7, 0.015, 16, 120);
-  const ringMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.4 });
-  const ring1 = new THREE.Mesh(ringGeo, ringMat);
-  ring1.rotation.x = Math.PI / 4;
-  scene.add(ring1);
-
-  const ring2 = new THREE.Mesh(
-    new THREE.TorusGeometry(2.0, 0.01, 16, 120),
-    new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.5, metalness: 0.2, transparent: true, opacity: 0.5 })
-  );
-  ring2.rotation.x = Math.PI / 2.5;
-  ring2.rotation.y = Math.PI / 5;
-  scene.add(ring2);
-
-  // Floating particles around orb
-  const particleCount = 180;
-  const pGeo = new THREE.BufferGeometry();
-  const pPos = new Float32Array(particleCount * 3);
-  const pRadii = new Float32Array(particleCount);
-  const pSpeeds = new Float32Array(particleCount);
-  const pOffsets = new Float32Array(particleCount);
-
-  for (let i = 0; i < particleCount; i++) {
-    const r = 1.6 + Math.random() * 1.2;
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    pPos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
-    pPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-    pPos[i * 3 + 2] = r * Math.cos(phi);
-    pRadii[i] = r;
-    pSpeeds[i] = 0.003 + Math.random() * 0.006;
-    pOffsets[i] = Math.random() * Math.PI * 2;
-  }
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-  const pMat = new THREE.PointsMaterial({
-    color: 0x333333,
-    size: 0.025,
-    transparent: true,
-    opacity: 0.7,
-  });
-  const particles = new THREE.Points(pGeo, pMat);
-  scene.add(particles);
-
-  // Mouse drag
-  let isDragging = false, prevMouse = { x: 0, y: 0 };
-  let rotVel = { x: 0, y: 0 };
-  canvas.addEventListener('mousedown', e => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
-  window.addEventListener('mouseup', () => { isDragging = false; });
-  window.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    const dx = e.clientX - prevMouse.x;
-    const dy = e.clientY - prevMouse.y;
-    rotVel.x = dy * 0.005;
-    rotVel.y = dx * 0.005;
-    prevMouse = { x: e.clientX, y: e.clientY };
-  });
-
-  // Touch
-  let prevTouch = null;
-  canvas.addEventListener('touchstart', e => { prevTouch = e.touches[0]; });
-  canvas.addEventListener('touchmove', e => {
-    if (!prevTouch) return;
-    const dx = e.touches[0].clientX - prevTouch.clientX;
-    const dy = e.touches[0].clientY - prevTouch.clientY;
-    rotVel.x = dy * 0.005;
-    rotVel.y = dx * 0.005;
-    prevTouch = e.touches[0];
-    e.preventDefault();
-  }, { passive: false });
-  canvas.addEventListener('touchend', () => { prevTouch = null; });
-
-  function resize() {
-    const parent = canvas.parentElement;
-    const w = parent.clientWidth;
-    const h = parent.clientHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  let t = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    t += 0.008;
-
-    // Apply drag rotation with inertia
-    orb.rotation.x += rotVel.x;
-    orb.rotation.y += rotVel.y;
-    wire.rotation.x += rotVel.x;
-    wire.rotation.y += rotVel.y;
-    rotVel.x *= 0.88;
-    rotVel.y *= 0.88;
-
-    // Idle float
-    orb.rotation.y += 0.003;
-    wire.rotation.y += 0.002;
-    ring1.rotation.z += 0.004;
-    ring2.rotation.z -= 0.003;
-
-    // Bob
-    orb.position.y = Math.sin(t * 0.8) * 0.08;
-    wire.position.y = orb.position.y;
-
-    // Particle pulse
-    const pp = pGeo.attributes.position.array;
-    for (let i = 0; i < particleCount; i++) {
-      const pulse = 1 + 0.04 * Math.sin(t * pSpeeds[i] * 100 + pOffsets[i]);
-      const origR = pRadii[i];
-      const origX = pp[i * 3], origY = pp[i * 3 + 1], origZ = pp[i * 3 + 2];
-      const len = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
-      const scale = (origR * pulse) / len;
-      pp[i * 3] = origX * scale / pulse * pulse; // simplified: keep direction, vary radius
-    }
-    pGeo.attributes.position.needsUpdate = false; // keep subtle, no update per frame for perf
-
-    particles.rotation.y += 0.001;
-    particles.rotation.x += 0.0005;
-
-    renderer.render(scene, camera);
-  }
-  animate();
-})();
-
 /* ── SCROLL ANIMATIONS ── */
 const fadeEls = document.querySelectorAll('.fade-up');
 const obs = new IntersectionObserver(entries => {

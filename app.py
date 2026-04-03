@@ -2,10 +2,13 @@
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 from datetime import datetime
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend to avoid threading issues
 import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup
 import google.generativeai as genai
+from dotenv import load_dotenv
 import random
 import json
 import io 
@@ -19,6 +22,9 @@ import time
 import numpy as np
 import urllib.parse
 from recomend import recommendations
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize Google Generative AI client
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')  # Set GOOGLE_API_KEY environment variable
@@ -492,7 +498,7 @@ def get_mood_plot():
     # Labels and title
     ax.set_ylabel("Sentiment Score", color='#000000', fontsize=10)
     ax.set_xlabel("Conversation Timeline", color='#000000', fontsize=10)
-    ax.set_title("🌟 Sentiment Analysis Graph", color='#1a1a1a', fontsize=title_size, pad=20, weight='bold')
+    ax.set_title("Sentiment Analysis Graph", color='#1a1a1a', fontsize=title_size, pad=20, weight='bold')
     
     # Customize ticks
     ax.tick_params(colors='#000000', labelsize=8)
@@ -502,9 +508,9 @@ def get_mood_plot():
     if data_count <= 20:  # Only show detailed labels for smaller datasets
         for i, (score, mood) in enumerate(zip(scores, moods)):
             if abs(score) > 0.5:  # Only label significant mood points
-                emoji = "😊" if "Positive" in mood else "😞" if "Negative" in mood else "😐"
-                ax.annotate(emoji, (i, score), xytext=(0, 10), textcoords='offset points', 
-                           ha='center', fontsize=8, alpha=0.8)
+                label = "Positive" if "Positive" in mood else "Negative" if "Negative" in mood else "Neutral"
+                ax.annotate(label[0].upper(), (i, score), xytext=(0, 10), textcoords='offset points', 
+                           ha='center', fontsize=7, alpha=0.8)
     
     # Legend
     if data_count > 10:
@@ -515,8 +521,10 @@ def get_mood_plot():
     
     # Save plot to file
     plot_path = 'analysis/mood_analysis.png'
-    plt.savefig(plot_path, format='png', dpi=100, bbox_inches='tight', facecolor='white')
-    plt.close()
+    try:
+        plt.savefig(plot_path, format='png', dpi=100, bbox_inches='tight', facecolor='white')
+    finally:
+        plt.close('all')  # Ensure all figures are closed
     
     # Calculate statistics
     avg_score = np.mean(scores)
@@ -1232,12 +1240,8 @@ def handle_feature(feat):
         emit('ai_response', f"Anchor: Here's your affirmation: {get_daily_affirmation()}")
     elif feat == 'study_tips':
         mood = session.get('last_mood', "😐 Neutral")
-        tips = get_study_tips(mood)
-        tip_text = "<p>Anchor: Here are some study tips tailored to your mood:</p><ul>"
-        for i, tip in enumerate(tips, 1):
-            tip_text += f"<li>{i}. {tip}</li>"
-        tip_text += "</ul>"
-        emit('ai_response', tip_text)
+        tips_text = generate_study_tips(mood)
+        emit('ai_response', f"Anchor: {tips_text}")
     elif feat == 'breathing_exercise':
         breathing_exercise(sid)
     elif feat == 'gratitude_prompt':
