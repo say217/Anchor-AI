@@ -3,13 +3,10 @@
 
 <table>
   <tr>
-    <td><img src="https://github.com/user-attachments/assets/4e9aeb8f-2b9f-4c3c-87ec-1bf65441ae43" alt="Image 1" width="400"/></td>
-    <td><img src="https://github.com/user-attachments/assets/aaad80a0-d164-4dfe-93eb-59dc05e103f8" alt="Image 2" width="400"/></td>
+    <td><img src="https://github.com/user-attachments/assets/1a336f0b-b3b5-429e-b23b-e10f172c92e4" alt="Image 1" width="600"/></td>
+    <td><img src="https://github.com/user-attachments/assets/828842cd-0d19-46ee-b79e-a87bfd244ef2" alt="Image 2" width="600"/></td>
   </tr> 
-  <tr>
-    <td><img src="https://github.com/user-attachments/assets/b00c310a-e277-485e-892f-09f92f255fea" alt="Image 3" width="400"/></td>
-    <td><img src="https://github.com/user-attachments/assets/03ef9e10-a288-409e-b612-2e7cb370f636" alt="Image 4" width="400"/></td>
-  </tr>
+
 </table>
 
 ## Introduction
@@ -18,6 +15,10 @@ Anchor AI is an empathetic, AI-powered mental health assistant designed specific
 
 **Important Disclaimer:** Anchor AI is not intended to replace professional mental health care. It serves only as a supportive, non-clinical tool. If you are experiencing a mental health crisis, please seek help from a licensed professional or emergency services.
 ## Project Structure
+
+
+<img width="1304"  alt="Screenshot 2026-04-04 014534" src="https://github.com/user-attachments/assets/71d6d8ab-669b-466c-b554-77fc4b058354" />
+
 
 The project is organized as follows:
 ```
@@ -43,6 +44,10 @@ Alongside mental health features, Anchor AI includes productivity and goal manag
 To personalize the user experience further, Anchor AI recommends resources such as **books, songs, movies, and motivational videos** that are aligned with the user’s mood. For example, students in a positive mood may receive recommendations such as "The Power of Positive Thinking." Summaries for books are obtained through web searches, while songs, videos, and movies include direct YouTube links. The system also integrates web search functionality, allowing students to append the word "search" to a query in order to retrieve and summarize top results via the Google Custom Search API.
 
 The technical design of Anchor AI prioritizes user experience. It provides real-time chat powered by Flask-SocketIO, ensuring interactive, websocket-based conversations. The AI responses are generated through Hugging Face’s InferenceClient with the Gemma-2-9b-it model, offering natural and empathetic replies. Task and goal reminders appear as popup notifications, while all user data such as moods, tasks, goals, and gratitude logs are stored in JSON or TXT files to ensure persistence. Shared URLs are previewed by fetching titles, descriptions, and images, and background threads handle periodic checks, reminders, and data cleanup tasks automatically.
+
+<img width="1219" alt="Screenshot 2026-04-04 014658" src="https://github.com/user-attachments/assets/b58a232b-66ec-4221-a2b3-5e159d30640b" />
+
+
 
 ---
 
