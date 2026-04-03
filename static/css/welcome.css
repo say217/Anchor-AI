@@ -28,6 +28,124 @@ body {
   line-height: 1.7;
 }
 
+/* ── LOADER PAGE (GLASSMORPHISM) ── */
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 0.6s ease-out;
+  pointer-events: all;
+}
+
+.loader-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.loader-content {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 4rem 3.5rem;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 380px;
+  width: 90%;
+}
+
+.loader-spinner {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 2rem;
+}
+
+.spinner-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid rgba(10, 10, 10, 0.8);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+.spinner-dot {
+  position: absolute;
+  inset: 15px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.6), rgba(10, 10, 10, 0.2));
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(0.8); opacity: 1; }
+}
+
+.loader-text {
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--black);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.loader-subtitle {
+  font-family: var(--body);
+  font-size: 0.95rem;
+  color: rgba(10, 10, 10, 0.6);
+  margin-bottom: 2rem;
+  letter-spacing: 0.03em;
+}
+
+.loader-progress {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.loader-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(10, 10, 10, 0.8), rgba(10, 10, 10, 0.4));
+  border-radius: 10px;
+  animation: progress-animation 2.5s ease-in-out infinite;
+}
+
+@keyframes progress-animation {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 100%; }
+}
+
 /* ── HEADER ── */
 header {
   position: fixed;
@@ -623,6 +741,57 @@ footer {
   transform: translateY(0); 
 }
 
+/* ── LOADER RESPONSIVE ── */
+@media (max-width: 768px) {
+  .loader-overlay {
+    padding: 20px;
+  }
+  
+  .loader-content {
+    padding: 30px 20px;
+  }
+  
+  .spinner-ring {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
+  
+  .spinner-dot {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .loader-text {
+    font-size: 18px;
+  }
+  
+  .loader-subtitle {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loader-text {
+    font-size: 16px;
+  }
+  
+  .loader-subtitle {
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  
+  .spinner-ring {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+  
+  .loader-progress-bar {
+    height: 2px;
+  }
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
   header { padding: 1.2rem 2rem; }
@@ -630,6 +799,7 @@ footer {
   .hero::before { display: none; }
   .hero-text { padding: 8rem 2rem 4rem; }
   .hero-3d { min-height: 400px; background: var(--gray-50); }
+  .hero-3d video { object-fit: cover; }
   .about { grid-template-columns: 1fr; padding: 6rem 2rem; gap: 4rem; }
   .features { padding: 6rem 2rem; }
   .features-grid { grid-template-columns: 1fr 1fr; }
@@ -643,6 +813,7 @@ footer {
 
 @media (max-width: 640px) {
   nav { display: none; }
+  .hero-3d { min-height: 300px; }
   .features-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .footer-top { grid-template-columns: 1fr; }

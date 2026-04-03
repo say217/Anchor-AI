@@ -14,6 +14,23 @@
 </head>
 <body>
 
+<!-- LOADER PAGE -->
+<div id="loader-overlay" class="loader-overlay">
+  <div class="loader-container">
+    <div class="loader-content">
+      <div class="loader-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-dot"></div>
+      </div>
+      <h2 class="loader-text">Loading Anchor AI</h2>
+      <p class="loader-subtitle">Preparing your mental health companion...</p>
+      <div class="loader-progress">
+        <div class="loader-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- HEADER -->
 <header id="site-header">
   <a href="#" class="logo">Anchor <span>AI</span></a>
@@ -282,6 +299,54 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 });
+
+/* ── PAGE LOADER ── */
+function hideLoader() {
+  const loader = document.getElementById('loader-overlay');
+  if (loader) {
+    setTimeout(() => {
+      loader.classList.add('hidden');
+    }, 500);
+  }
+}
+
+// Hide loader when page is fully loaded
+window.addEventListener('load', hideLoader);
+
+// Also hide loader after a maximum timeout (5 seconds)
+setTimeout(hideLoader, 5000);
+
+// Hide loader when DOM is ready if all images are already cached
+if (document.readyState === 'complete') {
+  hideLoader();
+}
+
+// Track image and video loading
+const images = document.querySelectorAll('img');
+const videos = document.querySelectorAll('video');
+let totalMedia = images.length + videos.length;
+let loadedMedia = 0;
+
+if (totalMedia === 0) {
+  hideLoader();
+} else {
+  images.forEach(img => {
+    img.addEventListener('load', checkMediaLoaded);
+    img.addEventListener('error', checkMediaLoaded);
+  });
+  
+  videos.forEach(vid => {
+    vid.addEventListener('canplay', checkMediaLoaded);
+    vid.addEventListener('error', checkMediaLoaded);
+  });
+}
+
+function checkMediaLoaded() {
+  loadedMedia++;
+  if (loadedMedia >= totalMedia) {
+    hideLoader();
+  }
+}
 </script>
 </body>
 </html>

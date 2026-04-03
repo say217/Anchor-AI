@@ -32,3 +32,5 @@
 2026-04-04 02:06:13,-0.4767,😞 Negative,u know i am sad
 2026-04-04 02:06:39,-0.4215,😞 Negative,my gf broke up with mw
 2026-04-04 02:06:59,0.0,😐 Neutral,suggest me how can i over come this
+2026-04-04 02:13:11,0.0,😐 Neutral,Exercise routines
+2026-04-04 02:13:46,0.0,😐 Neutral,suggest
