@@ -1,6 +1,6 @@
 # <img src="https://github.com/user-attachments/assets/4f05afaa-b7b7-471f-ae66-f1953a858fa3" alt="Anchor AI Logo"  margin-bottom="6px;" width="40" height="40"     style="border-radius:50%; vertical-align:middle;"/> Anchor AI: Mental Health Assistant for Youths
 
-
+<img src="https://github.com/user-attachments/assets/1a336f0b-b3b5-429e-b23b-e10f172c92e4" alt="Image 1" width="900"/>
 <table>
   <tr>
     <td><img src="https://github.com/user-attachments/assets/1a336f0b-b3b5-429e-b23b-e10f172c92e4" alt="Image 1" width="600"/></td>
